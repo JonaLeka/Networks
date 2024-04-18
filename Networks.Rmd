@@ -783,7 +783,6 @@ confidence_intervals <- boot_data %>%
             mean_strength = mean(value)) %>%
   ungroup()
 
-# Now you can use ggplot2 to make a lollipop chart
 ggplot(confidence_intervals, aes(x = node1, y = mean_strength)) +
   geom_segment(aes(x = node1, xend = node1, y = lower_ci, yend = upper_ci), color = "grey") + # CI lines in grey
   geom_point(size = 3, color = "black") + # Increase point size and set to black
