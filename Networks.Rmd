@@ -5,16 +5,6 @@ date: "`r Sys.Date()`"
 output: html_document
 ---
 
----
-title: "Network_Analysis_Facebook"
-author: "Jona Leka"
-date: "`r Sys.Date()`"
-output:
-  pdf_document: default
-  html_document: default
----
-
-
 
 ```{r}
 # load
@@ -34,458 +24,12 @@ library(tidyverse)
 library(psych)
 ```
 
-```{r}
-Climate_Survey_febmar_2021_microdata <- read.csv("/Users/jonaleka/Desktop/PhD Materials Tirana 2020!!/ ** UCL uni years/UCL PhD 2021-2024/Code:Stats/Network Analysis/Attempt/Climate_Survey_febmar_2021_microdata.csv", header = TRUE)
-Climate_Survey_2022_marapril_microdata <-read.csv("/Users/jonaleka/Desktop/PhD Materials Tirana 2020!!/ ** UCL uni years/UCL PhD 2021-2024/Code:Stats/Network Analysis/Attempt/Climate_Survey_2022_marapril_microdata.csv", header = TRUE)
-
-OnlyYear21 <- read.csv("/Users/jonaleka/Desktop/PhD Materials Tirana 2020!!/ ** UCL uni years/UCL PhD 2021-2024/Code:Stats/Network Analysis/Attempt/OnlyYear21.csv", header = TRUE)
-OnlyYear22 <-read.csv("/Users/jonaleka/Desktop/PhD Materials Tirana 2020!!/ ** UCL uni years/UCL PhD 2021-2024/Code:Stats/Network Analysis/Attempt/OnlyYear22.csv", header = TRUE)
-
-data <- read.csv("/Users/jonaleka/Desktop/PhD Materials Tirana 2020!!/ ** UCL uni years/UCL PhD 2021-2024/Code:Stats/Network Analysis/Attempt/OnlyYear21.csv", header = TRUE)
-
-data2 <-read.csv("/Users/jonaleka/Desktop/PhD Materials Tirana 2020!!/ ** UCL uni years/UCL PhD 2021-2024/Code:Stats/Network Analysis/Attempt/OnlyYear22.csv", header = TRUE)
-
-```
 
 ```{r}
 df21recoded2<-Climate_Survey_febmar_2021_microdata
 df22recoded2<-Climate_Survey_2022_marapril_microdata
 ```
 
-
-
-```{r}
-library(dplyr)
-```
-Recoding commences here
-
-```{r}
-Replacement_dict <- list(
-  country = c('Argentina' = 0, 'Australia' = 1, 'Brazil' = 2, 'Canada' = 3, 'Colombia' = 4, 'Costa Rica' = 5, 'Czech Republic' = 6, 'Egypt' = 7, 'France' = 8, 'Germany' = 9, 'India' = 10, 'Indonesia' = 11, 'Ireland' = 12, 'Italy' = 13, 'Japan' = 14, 'Malaysia' = 15, 'Mexico' = 16, 'Netherlands' = 17, 'Nigeria' = 18, 'Philippines' = 19, 'Poland' = 20, 'Russia' = 21, 'Saudi Arabia' = 22, 'South Africa' = 23, 'Spain' = 24, 'Taiwan' = 25, 'Thailand' = 26, 'Turkey' = 27, 'United Kingdom' = 28, 'United States' = 29, 'Vietnam' = 30),
-  climate_awareness = c('I have never heard of it' = 0, 'I know a little about it' = 1, 'I know a lot about it' = 3, 'I know a moderate amount about it' = 2, 'Refused' = -1),
-  climate_happening = c("Don't know" = 1, 'No' = 2, 'Refused' = -1, 'Yes' = 3),
-  climate_beliefs = c('Caused about equally by human activities and natural changes' = 2,
-                      'Caused mostly by human activities' = 3,
-                      'Caused mostly by natural changes in the environment' = 1,
-                      "None of the above because climate change isn't happening" = 0,
-                      'Other' = -2,
-                      'Refused' = -1),
-  climate_worry = c('Not at all worried' = 0,
-                    'Not very worried' = 1,
-                    'Refused' = -1,
-                    'Somewhat worried' = 2,
-                    'Very worried' = 3),
-  harm_personally = c('A great deal' = 3,
-                      'A moderate amount' = 2,
-                      "Don't know" = -1.5,
-                      'Not at all' = 0,
-                      'Only a little' = 1,
-                      'Refused' = -1),
-  harm_future_gen = c('A great deal' = 3,
-                      'A moderate amount' = 2,
-                      "Don't know" = -1.5,
-                      'Not at all' = 0,
-                      'Only a little' = 1,
-                      'Refused' = -1),
-  climate_importance = c('Extremely important' = 4,
-                         'Not at all important' = 0,
-                         'Not too important' = 1,
-                         'Refused' = -1,
-                         'Somewhat important' = 2,
-                         'Very important' = 3),
-  gov_priority = c('High' = 2,
-                   'Low' = 0,
-                   'Medium' = 1,
-                   'Refused' = -1,
-                   'Very high' = 3),
-  gov_more_less = c('Currently doing the right amount' = 2,
-                    'Less' = 1,
-                    'More' = 3,
-                    'Much less' = 0,
-                    'Much more' = 4,
-                    'Refused' = -1),
-  paris_support_oppose = c('Refused' = -1,
-                           'Somewhat oppose' = 1,
-                           'Somewhat support' = 2,
-                           'Strongly oppose' = 0,
-                           'Strongly support' = 3),
-  economic_impact = c('Have no effect on economic growth or jobs' = 1,
-                      'Improve economic growth and provide new jobs' = 2,
-                      'Reduce economic growth and cost jobs' = 0,
-                      'Refused' = -1),
-  renewable_more_less = c("Don't know" = -2,
-                          'Much less' = 0,
-                          'Much more' = 4,
-                          'Refused' = -1,
-                          'Same amount as today' = 2,
-                          'Somewhat less' = 1,
-                          'Somewhat more' = 3),
-  fossil_more_less = c("Don't know" = -2,
-                       'Much less' = 0,
-                       'Much more' = 4,
-                       'Refused' = -1,
-                       'Same amount as today' = 2,
-                       'Somewhat less' = 1,
-                       'Somewhat more' = 3),
-  climate_action = c('I am participating in an effort like this now' = 4,
-                     'I definitely would do it' = 3,
-                     'I definitely would not do it' = 0,
-                     'I probably would do it' = 2,
-                     'I probably would not do it' = 1,
-                     'Not sure' = -1.5,
-                     'Refused' = -1),
-  climate_info = c('I do not need any more information' = 0,
-                   'I need a little more information' = 1,
-                   'I need a lot more information' = 3,
-                   'I need some more information' = 2,
-                   'Refused' = -1),
-  age = c('18-29' = 0, '30-44' = 1, '45-59' = 2, '60+' = 3),
-  gender = c('Female' = 0, 'Male' = 1, 'Other/Prefer not to answer' = 2, 'Refused' = -1),
-  urbanicity = c('City' = 3, 'Refused' = -1, 'Suburb / Outskirts of a city' = 2, 'Town' = 1, 'Village or countryside' = 0)
-)
-
-
-```
-
-```{r}
-# Recoding using the Replacement_dict and saving it as a new dataset
-df21recoded2_new <- df21recoded2 %>%
-  mutate(
-    country = if_else(country %in% names(Replacement_dict$country), as.character(Replacement_dict$country[country]), country),
-    climate_awareness = if_else(climate_awareness %in% names(Replacement_dict$climate_awareness), as.character(Replacement_dict$climate_awareness[climate_awareness]), climate_awareness),
-    climate_happening = if_else(climate_happening %in% names(Replacement_dict$climate_happening), as.character(Replacement_dict$climate_happening[climate_happening]), climate_happening),
-    climate_beliefs = if_else(climate_beliefs %in% names(Replacement_dict$climate_beliefs), as.character(Replacement_dict$climate_beliefs[climate_beliefs]), climate_beliefs),
-    climate_worry = if_else(climate_worry %in% names(Replacement_dict$climate_worry), as.character(Replacement_dict$climate_worry[climate_worry]), climate_worry),
-    harm_personally = if_else(harm_personally %in% names(Replacement_dict$harm_personally), as.character(Replacement_dict$harm_personally[harm_personally]), harm_personally),
-    harm_future_gen = if_else(harm_future_gen %in% names(Replacement_dict$harm_future_gen), as.character(Replacement_dict$harm_future_gen[harm_future_gen]), harm_future_gen),
-    climate_importance = if_else(climate_importance %in% names(Replacement_dict$climate_importance), as.character(Replacement_dict$climate_importance[climate_importance]), climate_importance),
-    gov_priority = if_else(gov_priority %in% names(Replacement_dict$gov_priority), as.character(Replacement_dict$gov_priority[gov_priority]), gov_priority),
-    gov_more_less = if_else(gov_more_less %in% names(Replacement_dict$gov_more_less), as.character(Replacement_dict$gov_more_less[gov_more_less]), gov_more_less),
-    paris_support_oppose = if_else(paris_support_oppose %in% names(Replacement_dict$paris_support_oppose), as.character(Replacement_dict$paris_support_oppose[paris_support_oppose]), paris_support_oppose),
-    economic_impact = if_else(economic_impact %in% names(Replacement_dict$economic_impact), as.character(Replacement_dict$economic_impact[economic_impact]), economic_impact),
-    renewable_more_less = if_else(renewable_more_less %in% names(Replacement_dict$renewable_more_less), as.character(Replacement_dict$renewable_more_less[renewable_more_less]), renewable_more_less),
-    fossil_more_less = if_else(fossil_more_less %in% names(Replacement_dict$fossil_more_less), as.character(Replacement_dict$fossil_more_less[fossil_more_less]), fossil_more_less),
-    climate_action = if_else(climate_action %in% names(Replacement_dict$climate_action), as.character(Replacement_dict$climate_action[climate_action]), climate_action),
-    climate_info = if_else(climate_info %in% names(Replacement_dict$climate_info), as.character(Replacement_dict$climate_info[climate_info]), climate_info),
-    age = if_else(age %in% names(Replacement_dict$age), as.character(Replacement_dict$age[age]), age),
-    gender = if_else(gender %in% names(Replacement_dict$gender), as.character(Replacement_dict$gender[gender]), gender),
-    urbanicity = if_else(urbanicity %in% names(Replacement_dict$urbanicity), as.character(Replacement_dict$urbanicity[urbanicity]), urbanicity)
-  )
-
-```
-
-
-```{r}
-library(dplyr)
-
-df21recoded2_new <- df21recoded2_new %>%
-  select(-c(weight, starts_with("education_"), starts_with("income_"), region_in, region_us))
-
-```
-
-
-```{r}
-Replacement_dict2 <- list(
-    climate_awareness = c('I have never heard of it' = 0, 'I know a little about it' = 1, 'I know a lot about it' = 3, 'I know a moderate amount about it' = 2, 'Refused' = -1),
-  climate_happening = c("Don't know" = 1, 'No' = 2, 'Refused' = -1, 'Yes' = 3),
-  climate_beliefs = c('Caused about equally by human activities and natural changes' = 2,
-                      'Caused mostly by human activities' = 3,
-                      'Caused mostly by natural changes in the environment' = 1,
-                      "None of the above because climate change isn't happening" = 0,
-                      'Other' = -2,
-                      'Refused' = -1),
-  climate_worry = c('Not at all worried' = 0,
-                    'Not very worried' = 1,
-                    'Refused' = -1,
-                    'Somewhat worried' = 2,
-                    'Very worried' = 3),
-  harm_personally = c('A great deal' = 3,
-                      'A moderate amount' = 2,
-                      "Don't know" = -1.5,
-                      'Not at all' = 0,
-                      'Only a little' = 1,
-                      'Refused' = -1),
-  harm_future_gen = c('A great deal' = 3,
-                      'A moderate amount' = 2,
-                      "Don't know" = -1.5,
-                      'Not at all' = 0,
-                      'Only a little' = 1,
-                      'Refused' = -1),
-  climate_importance = c('Extremely important' = 4,
-                         'Not at all important' = 0,
-                         'Not too important' = 1,
-                         'Refused' = -1,
-                         'Somewhat important' = 2,
-                         'Very important' = 3),
-  gov_priority = c('High' = 2,
-                   'Low' = 0,
-                   'Medium' = 1,
-                   'Refused' = -1,
-                   'Very high' = 3),
-  gov_more_less = c('Currently doing the right amount' = 2,
-                    'Less' = 1,
-                    'More' = 3,
-                    'Much less' = 0,
-                    'Much more' = 4,
-                    'Refused' = -1),
-  paris_support_oppose = c('Refused' = -1,
-                           'Somewhat oppose' = 1,
-                           'Somewhat support' = 2,
-                           'Strongly oppose' = 0,
-                           'Strongly support' = 3),
-  economic_impact = c('Have no effect on economic growth or jobs' = 1,
-                      'Improve economic growth and provide new jobs' = 2,
-                      'Reduce economic growth and cost jobs' = 0,
-                      'Refused' = -1),
-  renewable_more_less = c("Don't know" = -2,
-                          'Much less' = 0,
-                          'Much more' = 4,
-                          'Refused' = -1,
-                          'Same amount as today' = 2,
-                          'Somewhat less' = 1,
-                          'Somewhat more' = 3),
-  fossil_more_less = c("Don't know" = -2,
-                       'Much less' = 0,
-                       'Much more' = 4,
-                       'Refused' = -1,
-                       'Same amount as today' = 2,
-                       'Somewhat less' = 1,
-                       'Somewhat more' = 3),
-  climate_action = c('I am participating in an effort like this now' = 4,
-                     'I definitely would do it' = 3,
-                     'I definitely would not do it' = 0,
-                     'I probably would do it' = 2,
-                     'I probably would not do it' = 1,
-                     'Not sure' = -1.5,
-                     'Refused' = -1),
-  climate_info = c('I do not need any more information' = 0,
-                   'I need a little more information' = 1,
-                   'I need a lot more information' = 3,
-                   'I need some more information' = 2,
-                   'Refused' = -1),
-  age = c('18-29' = 0, '30-44' = 1, '45-59' = 2, '60+' = 3),
-  gender = c('Female' = 0, 'Male' = 1, 'Other/Prefer not to answer' = 2, 'Refused' = -1),
-  urbanicity = c('City' = 3, 'Refused' = -1, 'Suburb / Outskirts of a city' = 2, 'Town' = 1, 'Village or countryside' = 0),
-  threat_20_years = c("Don't know" = -2,
-                      'Not a threat at all' = 0,
-                      'Refused' = -1,
-                      'Somewhat serious threat' = 1,
-                      'Very serious threat' = 2),
-  country_responsibility = c("Don't know" = 3,
-                             'Only if most other countries around the world reduce their pollution' = 1,
-                             'Only if the countries that produce the most pollution reduce their pollution' = 2,
-                             'Refused' = -1,
-                             'Regardless of what other countries do' = 3,
-                             'The country (or territory) where I live should not reduce its pollution' = 0),
-  most_responsible = c('Businesses' = 2,
-                       "Don't know" = -1.5,
-                       'Individual people' = 1,
-                       'Refused' = -1,
-                       'The country (or territory) where I live should not reduce its pollution' = 0,
-                       'The government' = 3),
-  organized_group = c('I am participating in an effort like this now' = 4,
-                      'I definitely would do it' = 3,
-                      'I definitely would not do it' = 0,
-                      'I probably would do it' = 2,
-                      'I probably would not do it' = 1,
-                      'Not sure' = -2,
-                      'Refused' = -1),
-  freq_hear = c('At least once a month' = 3,
-                'At least once a week' = 4,
-                "Don't know" = -2,
-                'Never' = 0,
-                'Once a year or less often' = 1,
-                'Refused' = -1,
-                'Several times a year' = 2),
-  education = c('Advanced vocational' = 7,
-                "Bachelor's or more" = 9,
-                'High school' = 6,
-                'Less than high school' = 4,
-                'Less than upper secondary' = 0,
-                'Lower or upper secondary' = 1,
-                'Post secondary' = 5,
-                'Some college' = 8,
-                'Upper secondary' = 3,
-                'Upper secondary or less' = 2),
-country= c('Argentina' = 0,
-  'Australia' = 1,
-  'Brazil' = 2,
-  'Canada' = 3,
-  'Colombia' = 4,
-  'Costa Rica' = 5,
-  'Czech Republic' = 6,
-  'Egypt' = 7,
-  'France' = 8,
-  'Germany' = 9,
-  'India' = 10,
-  'Indonesia' = 11,
-  'Ireland' = 12,
-  'Italy' = 13,
-  'Japan' = 14,
-  'Malaysia' = 15,
-  'Mexico' = 16,
-  'Netherlands' = 17,
-  'Nigeria' = 18,
-  'Philippines' = 19,
-  'Poland' = 20,
-  'Russia' = 21,
-  'Saudi Arabia' = 22,
-  'South Africa' = 23,
-  'Spain' = 24,
-  'Taiwan' = 25,
-  'Thailand' = 26,
-  'Turkey' = 27,
-  'United Kingdom' = 28,
-  'United States' = 29,
-  'Vietnam' = 30,
-  'Asian & Pacific Islands' = 31,
-  'Paraguay' = 32,
-  'El Salvador' = 33,
-  'Croatia' = 34,
-  'Pakistan' = 35,
-  'South Korea' = 36,
-  'Cyprus' = 37,
-  'Nicaragua' = 38,
-  'Bolivia (Plurinational State of)' = 39,
-  'Finland' = 40,
-  'Zambia' = 41,
-  'Kenya' = 42,
-  'Malawi' = 43,
-  'Trinidad and Tobago' = 44,
-  'Benin' = 45,
-  'Azerbaijan' = 46,
-  'Hong Kong' = 47,
-  'Chile' = 48,
-  'Sub-Saharan Africa' = 49,
-  'Puerto Rico' = 50,
-  'Lithuania' = 51,
-  'Uruguay' = 52,
-  'Botswana' = 53,
-  'Morocco' = 54,
-  'Oman' = 55,
-  'Nepal' = 56,
-  'Haiti' = 57,
-  'Serbia' = 58,
-  "Cote d'Ivoire" = 59,
-  'Portugal' = 60,
-  'Uzbekistan' = 61,
-  'Honduras' = 62,
-  'Yemen' = 63,
-  'Libya' = 64,
-  'Bulgaria' = 65,
-  'Austria' = 66,
-  'Tunisia' = 67,
-  'Algeria' = 68,
-  'Peru' = 69,
-  'Israel' = 70,
-  'Armenia' = 71,
-  'Australia' = 72,
-  'Guatemala' = 73,
-  'Jamaica' = 74,
-  'New Zealand' = 75,
-  'Sri Lanka' = 76,
-  'Netherlands' = 77,
-  'Burkina Faso' = 78,
-  'Lebanon' = 79,
-  'Dominican Republic' = 80,
-  'Singapore' = 81,
-  'Senegal' = 82,
-  'Taiwan' = 83,
-  'Cameroon' = 84,
-  'Congo (Democratic Republic of the)' = 85,
-  'Ghana' = 86,
-  'Cambodia' = 87,
-  'Switzerland' = 88,
-  'Czechia' = 89,
-  'Jordan' = 90,
-  'Saudi Arabia' = 91,
-  'Bangladesh' = 92,
-  'Caribbean' = 93,
-  'Belgium' = 94,
-  'Philippines' = 95,
-  'Ireland' = 96,
-  'Spain' = 97,
-  'Bosnia and Herzegovina' = 98,
-  'Argentina' = 99,
-  'Romania' = 100,
-  'Vietnam' = 101,
-  'Albania' = 102,
-  'Panama' = 103,
-  'Sweden' = 104,
-  'Ecuador' = 105,
-  'Indonesia' = 106,
-  'North MAcedonia' = 107,
-  'Turkey' = 108,
-  'Hungary' = 109,
-  'Norway' = 110,
-  'Qatar' = 111,
-  'Tanzania' = 112,
-  'Iraq' = 113,
-  'Angola' = 114,
-  'Mozambique' = 115,
-  'United Arab Emirates' = 116,
-  'Kuwait' = 117,
-  'Kosovo' = 118,
-  'Slovakia' = 119,
-  'Greece' = 120,
-  'Denmark' = 121,
-  "Lao People's Democratic Republic" = 122)
-)
-
-```
-
-```{r}
-library(dplyr)
-
-df22recoded2_new <- df22recoded2 %>%
-  mutate(
-    climate_awareness = recode(climate_awareness, !!!Replacement_dict2$climate_awareness),
-    climate_happening = recode(climate_happening, !!!Replacement_dict2$climate_happening),
-    climate_beliefs = recode(climate_beliefs, !!!Replacement_dict2$climate_beliefs),
-    climate_worry = recode(climate_worry, !!!Replacement_dict2$climate_worry),
-    harm_personally = recode(harm_personally, !!!Replacement_dict2$harm_personally),
-    harm_future_gen = recode(harm_future_gen, !!!Replacement_dict2$harm_future_gen),
-    climate_importance = recode(climate_importance, !!!Replacement_dict2$climate_importance),
-    gov_priority = recode(gov_priority, !!!Replacement_dict2$gov_priority),
-    economic_impact = recode(economic_impact, !!!Replacement_dict2$economic_impact),
-    renewable_more_less = recode(renewable_more_less, !!!Replacement_dict2$renewable_more_less),
-    fossil_more_less = recode(fossil_more_less, !!!Replacement_dict2$fossil_more_less),
-    age = recode(age, !!!Replacement_dict2$age),
-    gender = recode(gender, !!!Replacement_dict2$gender),
-    urbanicity = recode(urbanicity, !!!Replacement_dict2$urbanicity),
-    threat_20_years = recode(threat_20_years, !!!Replacement_dict2$threat_20_years),
-    country_responsibility = recode(country_responsibility, !!!Replacement_dict2$country_responsibility),
-    most_responsible = recode(most_responsible, !!!Replacement_dict2$most_responsible),
-    organized_group = recode(organized_group, !!!Replacement_dict2$organized_group),
-    freq_hear = recode(freq_hear, !!!Replacement_dict2$freq_hear),
-    education = recode(education, !!!Replacement_dict2$education),
-    country=recode(country,!!!Replacement_dict2$country)
-  )
-
-
-```
-
-
-```{r}
-library(dplyr)
-
-df22recoded2_new <- df22recoded2_new %>%
-  select(-c(weight, region_de, region_fr, education,region_in, region_us, weight_region_fr, weight_region_de))
-
-```
-
-```{r}
-# recode negative values as NA 
-
-df21recoded2_NA <- df21recoded2_new %>%
-  select(-id) %>%
-  mutate_all(~ifelse(. < 0, NA, .))
-
-df22recoded2_NA <- df22recoded2_new %>%
-  select(-id) %>%
-  mutate_all(~ifelse(. < 0, NA, .))
-
-```
 
 ```{r}
 # Check for missing values in each column
@@ -517,18 +61,6 @@ df22recoded2_NA <- df22recoded2_NA %>%
 
 ```
 
-```{r}
-write.csv(df21recoded_subset_clean, "df21recoded_subset_clean.csv")
-write.csv(df22recoded_subset_clean, "df22recoded_subset_clean.csv")
-write.csv(df21recoded_subset, "df21recoded_subset.csv")
-write.csv(df22recoded_subset, "df22recoded_subset.csv")
-write.csv(df21recoded2_NA, "df21recoded2_NA.csv")
-write.csv(df22recoded2_NA, "df22recoded2_NA.csv")
-write.csv(df21recoded2_NA_clean, "df21recoded2_NA_clean.csv")
-write.csv(df22recoded2_NA_clean, "df22recoded2_NA_clean.csv")
-
-```
-
 
 
 ```{r}
@@ -536,10 +68,6 @@ write.csv(df22recoded2_NA_clean, "df22recoded2_NA_clean.csv")
 summary(df21recoded_subset)
 hist(df21recoded_subset$climate_beliefs)
 ```
-```{r}
-str(df21recoded_subset)
-```
-
 
 ```{r}
 library(psych)
@@ -549,42 +77,26 @@ print(description21)
 ```{r}
 
 age_frequencies <- table(df21recoded2_NA$age)
-
-# Calculate percentages
 age_percentages <- (age_frequencies / sum(age_frequencies)) * 100
-
-# Print out the percentages
 print(age_percentages)
 
 
 ```
 ```{r}
 gender_frequencies <- table(df21recoded2_NA$gender)
-
-# Calculate percentages
 gender_percentages <- (gender_frequencies / sum(gender_frequencies)) * 100
-
-# Print out the percentages
 print(gender_percentages)
 ```
 ```{r}
 
 age_frequencies2 <- table(df22recoded2_NA$age)
-
-# Calculate percentages
 age_percentages2 <- (age_frequencies2 / sum(age_frequencies2)) * 100
-
-# Print out the percentages
 print(age_percentages2)
 ```
 
 ```{r}
 gender_frequencies2 <- table(df22recoded2_NA$gender)
-
-# Calculate percentages
 gender_percentages2 <- (gender_frequencies2 / sum(gender_frequencies2)) * 100
-
-# Print out the percentages
 print(gender_percentages2)
 ```
 
@@ -598,15 +110,9 @@ variables <- c( "climate_awareness", "climate_happening", "climate_beliefs",
 
 
 ```{r}
-# Create histograms for each variable
 for (variable in variables) {
   hist(df21recoded_subset[[variable]], main = paste("Histogram of", variable), xlab = variable)
 }
-```
-
-
-```{r}
-# Create density plots for each variable
 for (variable in variables) {
   plot(density(df21recoded_subset[[variable]], na.rm = TRUE), main = paste("Density Plot of", variable), xlab = variable)
 }
@@ -622,13 +128,10 @@ str(df21recoded_subset)
 ```
 
 ```{r}
-# Increase resolution to 300 ppi and set a larger size for the plot
 png("Network21_EBIC_poly.png", width = 2000, height = 1500, res = 300)
 plot(Network21_EBIC_poly, layout = "spring")
 
 ```
-
-
 
 ```{r}
 png("Network21_EBIC_poly_c.png", width = 2000, height = 1500, res = 300)
@@ -647,7 +150,6 @@ plot(boot1, labels = FALSE,
 ```
 
 ```{r}
-# visualize results 
 png("bootnet1CI_plot.png", width = 2000, height = 1500)
 ## CI around edges
 plot(boot1, plot="area", order="sample",font_size = 9, legend= FALSE)
@@ -708,8 +210,6 @@ confidence_intervals <- boot_data %>%
   ungroup() %>%
   arrange(desc(mean_strength)) # Add this line to arrange by mean_strength
 
-# Now you can use ggplot2 to make a lollipop chart
-library(ggplot2)
 
 ggplot(confidence_intervals, aes(x = reorder(node1, -mean_strength), y = mean_strength)) +
   geom_point() +
@@ -745,11 +245,7 @@ ggplot(confidence_intervals, aes(x = reorder(node1, -mean_strength), y = mean_st
 
 ```
 ```{r}
-# Assuming boot1_centrality is your list object and it has been loaded in R
 boot_data <- boot1_centrality$bootTable
-
-# Calculate the confidence intervals for each node
-library(dplyr)
 
 confidence_intervals <- boot_data %>%
   group_by(node1) %>%
@@ -758,9 +254,6 @@ confidence_intervals <- boot_data %>%
             mean_strength = mean(value)) %>%
   ungroup() %>%
   arrange(desc(mean_strength)) # Arrange by mean_strength
-
-# Now you can use ggplot2 to make a lollipop chart with shaded CI
-library(ggplot2)
 
 ggplot(confidence_intervals, aes(x = reorder(node1, -mean_strength), y = mean_strength)) +
   geom_ribbon(aes(ymin = lower_ci, ymax = upper_ci), fill = "grey", alpha = 0.5) +
@@ -773,9 +266,6 @@ ggplot(confidence_intervals, aes(x = reorder(node1, -mean_strength), y = mean_st
 ```
 
 ```{r}
-library(dplyr)
-library(ggplot2)
-
 confidence_intervals <- boot_data %>%
   group_by(node1) %>%
   summarise(lower_ci = quantile(value, probs = 0.025),
@@ -798,7 +288,6 @@ ggplot(confidence_intervals, aes(x = node1, y = mean_strength)) +
 ```
 
 ```{r}
-#Zoom in on specific nodes
 plot(boot1_centrality, perNode=TRUE, "strength")
 ```
 
@@ -812,24 +301,18 @@ corStability(boot1_centrality)
 
 ```{r}
 summary(boot1)
-```
-```{r}
 summary(boot1_centrality)
 ```
 
 
 
 ```{r}
-
 # using the default functions of bootnet, estimating network with pcor (without transformation)
-library("bootnet")
 Network21_EBIC_pcor <- estimateNetwork(df21recoded_subset,
  default = "EBICglasso",tuning = 0.5)
 
 #with threshold (certain nodes have been dropped here as per below graph)
-
 network_pcor21 <- estimateNetwork(df21recoded_subset, default = "pcor", threshold = "sig", alpha = 0.05)
-
 ```
 
 
@@ -854,7 +337,6 @@ centralityPlot(network_pcor21, include = c("Strength", "Betweenness", "Closeness
 
 
 ```{r}
-library (bootnet)
 centrality_results <- centrality(Network21_EBIC_poly)
 print(centrality_results)
 ```
@@ -879,7 +361,6 @@ centralityPlot(list(Network21_EBIC_poly=Network21_EBIC_poly,Network21_EBIC_pcor=
 # Edge-weight accuracy test 
 boot1_b <-bootnet(Network21_EBIC_pcor, nBoots = 1000, type="nonparametric",
 nCores = 8)
-
 ```
 ```{r eval=FALSE}
 
@@ -902,7 +383,7 @@ plot(boot1_b)
 differenceTest(boot1_b,1,2,"strength")
 
 ```
-The below code plots the difference tests of node strength between all pairs of edge-weights. Here the plot argument has to be used because the function normally defaults to plotting bootstrapped CIs for edge-weights, the onlyNonZero argument sets so that only edges are shown that are nonzero in the estimated network, and order = "sample" orders the edge-weights from the most positive to the most negative edge-weight in the sample network.
+Plot the difference tests of node strength between all pairs of edge-weights. Here the plot argument has to be used because the function normally defaults to plotting bootstrapped CIs for edge-weights, the onlyNonZero argument sets so that only edges are shown that are nonzero in the estimated network, and order = "sample" orders the edge-weights from the most positive to the most negative edge-weight in the sample network.
 ```{r eval=FALSE}
 plot(boot1_b, "edge", plot = "difference", onlyNonZero = TRUE, order = "sample")
 
@@ -949,7 +430,7 @@ boot_centrality_threshold <- bootnet(network_pcor21, nBoots = 1000, type = "case
 plot(boot_centrality_threshold, perNode=TRUE, "strength")
 ```
 
-The NPN transformation works by applying a rank-based transformation (like the inverse normal transformation) to each variable in the dataset. This transformation converts the ranks of each variable into the quantiles of a standard normal distribution, which helps to reduce the impact of outliers and can make the distribution of each variable more symmetric.
+The NPN transformation converts the ranks of each variable into the quantiles of a standard normal distribution, which helps to reduce the impact of outliers and can make the distribution of each variable more symmetric.
 
 ```{r}
 # Estimate network 2 - Apply nonparanormal transformation to data first, then estimate network with EBIC using partial correlations - [skip this]
@@ -1059,8 +540,6 @@ plot(boot_npn_accuracy)
 plot(boot_npn_accuracy, perNode=TRUE, "strength")
 ```
 
-
-
 ```{r}
 # compare network npn with the one where data was transformed prior to estimation
 centralityPlot(list(Network21_npn=Network21_npn,Network21_transformed= Network21_transformed))
@@ -1104,29 +583,6 @@ plot(Network21_EBIC_poly)
 ```
 
 
-```{r eval=FALSE}
-####### WLS estimation in Psychonetrics
-library(psychonetrics)
-modelpsych<-ggm(df21recoded_subset,ordered=TRUE)
-modelpsych<-modelpsych %>% runmodel
-modelpsych %>% getmatrix("omega")
-modelpsych %>% parameters
-
-```
-
-
-
-```{r eval=FALSE}
-######## Bayesian estimation with BGGM
-library(BGGM)
-fit<-explore(df21recoded_subset,type="ordinal")
-```
-
-```{r}
-sapply(df21recoded_subset, class)
-
-```
-
 ```{r}
 ######Analyze data 2022
 # Compute summary statistics for all variables
@@ -1159,7 +615,6 @@ description22<- describe(df22recoded_subset)
 print(description22)
 ```
 ```{r}
-library(bootnet)
 # Estimate network for data 22 with polychoric cor as input and EBIC with LASSO
 Network22_EBIC_poly <- estimateNetwork(df22recoded_subset,default = "EBICglasso", tuning = .5, corMethod = "cor_auto")
 ```
@@ -1175,8 +630,6 @@ summary(Network22_EBIC_poly$graph)
 png("Network21_EBIC_poly_c.png", width = 2000, height = 1500, res = 300)
 centralityPlot(Network22_EBIC_poly, include = c("Strength", "Betweenness", "Closeness"))
 ```
-
-
 
 ```{r}
 plot(Network22_EBIC_poly, layout="spring")
@@ -1239,12 +692,9 @@ boot2_centrality$sampleTable$value
 ```
 ```{r}
 png("Boot2_centralitystability.png", width = 2000, height = 1500, res = 300)
-# Assuming boot1_centrality is your list object and it has been loaded in R
 boot_data2 <- boot2_centrality$bootTable
 
 # Calculate the confidence intervals for each node
-library(dplyr)
-
 confidence_intervals <- boot_data2 %>%
   group_by(node1) %>%
   summarise(lower_ci = quantile(value, probs = 0.025),
@@ -1252,9 +702,6 @@ confidence_intervals <- boot_data2 %>%
             mean_strength = mean(value)) %>%
   ungroup() %>%
   arrange(desc(mean_strength)) # Arrange by mean_strength
-
-# Now you can use ggplot2 to make a lollipop chart
-library(ggplot2)
 
 ggplot(confidence_intervals, aes(x = reorder(node1, -mean_strength), y = mean_strength)) +
   geom_point() +
@@ -1484,11 +931,8 @@ ggplot(tsne_df, aes(x = Dimension1, y = Dimension2, color = Cluster)) +
 
 ```
 ```{r}
-# Elbow method to determine number of clusters in 2022
-library(dplyr)
-library(ggplot2)
+# Determine number of clusters in 2022
 
-# Drop NAs from the data
 data_clean2 <- df22recoded_subset %>% drop_na()
 
 # Compute total within-cluster sum of square
@@ -1496,7 +940,6 @@ wss <- map_dbl(1:10, function(k) {
   kmeans(data_clean2, centers = k)$tot.withinss
 })
 
-# Plot the elbow
 elbow_df <- data.frame(k = 1:10, wss = wss)
 ggplot(elbow_df, aes(x = k, y = wss)) +
   geom_line() +
@@ -1546,9 +989,8 @@ ggplot(tsne_df2, aes(x = Dimension1, y = Dimension2, color = Cluster)) +
 library(kernlab)
 library(cluster)
 
-# Choose an appropriate sigma (width of the Gaussian kernel).
+# Choose an appropriate sigma 
 sigma <- 15
-# 1. Get a small sample from data cause memory exhausted
 
 df21_subset_small <- df21_subset_RC[sample(1:nrow(df21_subset_RC), 1000), ]
 
@@ -1613,16 +1055,12 @@ net21_female_EBIC <- estimateNetwork(data = dat21_female, default = "EBICglasso"
 net21_male_EBIC <- estimateNetwork(data = dat21_male, default = "EBICglasso", tuning = 0.5, corMethod = "cor_auto")
 ```
 ```{r}
-library(bootnet)
-library(qgraph)
 centralityPlot(net21_female_EBIC, include = c("Strength", "Betweenness", "Closeness"))
 centralityPlot(net21_male_EBIC, include = c("Strength", "Betweenness", "Closeness"))
 ```
 
 
 ```{r}
-#try again without the subsetted dataset (removing other demographics and replacing -1 with NAs)
-library(dplyr)
 
 dat21_subset <- df21recoded2_NA %>%
   select(-age, -urbanicity, -country)
@@ -1636,7 +1074,7 @@ dat21_male_subset <- filter(dat21_subset, gender == 1)
 
 
 ```{r}
-# remove one level variable (gender)
+# remove one level variable 
 dat21_female_subset <- select(dat21_female_subset, -gender)
 dat21_male_subset <- select(dat21_male_subset, -gender)
 
@@ -1712,7 +1150,7 @@ data21_netherlands<- filter(dat21_country, country == 17)
 ```
 
 ```{r}
-# remove one level variable, so country
+# remove one level variable
 data21_netherlands <- select(data21_netherlands, -country)
 
 ```
@@ -2135,7 +1573,7 @@ plot(NCT_action_c, what = c("strength", "network", "edge", "centrality"))
 # p value of global strength
 NCT_action_c$glstrinv.pval
 ```
-The global strength of a network is the sum of the absolute edge weights in the network. The overall connectivity or co-activation in the two networks is significantly different, with a p-value <0.001
+ The overall connectivity or co-activation in the two networks is significantly different, with a p-value <0.001
 
 ```{r}
 # p value of omnibus test (check this again)
@@ -2203,12 +1641,6 @@ for (col in colnames(results)) {
 ```{r}
 boxplot(results, main="Effects on climate_action by harm_future_gen value", ylab="Effect on climate_action")
 
-```
-
-```{r}
-##### Ising simulations for binarized datasets
-library(IsingSampler)
-library(IsingFit)
 ```
 
 
