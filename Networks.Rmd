@@ -1,0 +1,2218 @@
+---
+title: "Networks"
+author: "Jona Leka"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+---
+title: "Network_Analysis_Facebook"
+author: "Jona Leka"
+date: "`r Sys.Date()`"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+
+
+```{r}
+# load
+library(dplyr)
+library(tidyr)
+library(pander)
+library(ggplot2)
+library(gridExtra)
+library(Hmisc)
+library(igraph)
+library(GGally)
+library(intergraph)
+library(nnet)
+library(bootnet)
+library(qgraph)
+library(tidyverse)
+library(psych)
+```
+
+```{r}
+Climate_Survey_febmar_2021_microdata <- read.csv("/Users/jonaleka/Desktop/PhD Materials Tirana 2020!!/ ** UCL uni years/UCL PhD 2021-2024/Code:Stats/Network Analysis/Attempt/Climate_Survey_febmar_2021_microdata.csv", header = TRUE)
+Climate_Survey_2022_marapril_microdata <-read.csv("/Users/jonaleka/Desktop/PhD Materials Tirana 2020!!/ ** UCL uni years/UCL PhD 2021-2024/Code:Stats/Network Analysis/Attempt/Climate_Survey_2022_marapril_microdata.csv", header = TRUE)
+
+OnlyYear21 <- read.csv("/Users/jonaleka/Desktop/PhD Materials Tirana 2020!!/ ** UCL uni years/UCL PhD 2021-2024/Code:Stats/Network Analysis/Attempt/OnlyYear21.csv", header = TRUE)
+OnlyYear22 <-read.csv("/Users/jonaleka/Desktop/PhD Materials Tirana 2020!!/ ** UCL uni years/UCL PhD 2021-2024/Code:Stats/Network Analysis/Attempt/OnlyYear22.csv", header = TRUE)
+
+data <- read.csv("/Users/jonaleka/Desktop/PhD Materials Tirana 2020!!/ ** UCL uni years/UCL PhD 2021-2024/Code:Stats/Network Analysis/Attempt/OnlyYear21.csv", header = TRUE)
+
+data2 <-read.csv("/Users/jonaleka/Desktop/PhD Materials Tirana 2020!!/ ** UCL uni years/UCL PhD 2021-2024/Code:Stats/Network Analysis/Attempt/OnlyYear22.csv", header = TRUE)
+
+```
+
+```{r}
+df21recoded2<-Climate_Survey_febmar_2021_microdata
+df22recoded2<-Climate_Survey_2022_marapril_microdata
+```
+
+
+
+```{r}
+library(dplyr)
+```
+Recoding commences here
+
+```{r}
+Replacement_dict <- list(
+  country = c('Argentina' = 0, 'Australia' = 1, 'Brazil' = 2, 'Canada' = 3, 'Colombia' = 4, 'Costa Rica' = 5, 'Czech Republic' = 6, 'Egypt' = 7, 'France' = 8, 'Germany' = 9, 'India' = 10, 'Indonesia' = 11, 'Ireland' = 12, 'Italy' = 13, 'Japan' = 14, 'Malaysia' = 15, 'Mexico' = 16, 'Netherlands' = 17, 'Nigeria' = 18, 'Philippines' = 19, 'Poland' = 20, 'Russia' = 21, 'Saudi Arabia' = 22, 'South Africa' = 23, 'Spain' = 24, 'Taiwan' = 25, 'Thailand' = 26, 'Turkey' = 27, 'United Kingdom' = 28, 'United States' = 29, 'Vietnam' = 30),
+  climate_awareness = c('I have never heard of it' = 0, 'I know a little about it' = 1, 'I know a lot about it' = 3, 'I know a moderate amount about it' = 2, 'Refused' = -1),
+  climate_happening = c("Don't know" = 1, 'No' = 2, 'Refused' = -1, 'Yes' = 3),
+  climate_beliefs = c('Caused about equally by human activities and natural changes' = 2,
+                      'Caused mostly by human activities' = 3,
+                      'Caused mostly by natural changes in the environment' = 1,
+                      "None of the above because climate change isn't happening" = 0,
+                      'Other' = -2,
+                      'Refused' = -1),
+  climate_worry = c('Not at all worried' = 0,
+                    'Not very worried' = 1,
+                    'Refused' = -1,
+                    'Somewhat worried' = 2,
+                    'Very worried' = 3),
+  harm_personally = c('A great deal' = 3,
+                      'A moderate amount' = 2,
+                      "Don't know" = -1.5,
+                      'Not at all' = 0,
+                      'Only a little' = 1,
+                      'Refused' = -1),
+  harm_future_gen = c('A great deal' = 3,
+                      'A moderate amount' = 2,
+                      "Don't know" = -1.5,
+                      'Not at all' = 0,
+                      'Only a little' = 1,
+                      'Refused' = -1),
+  climate_importance = c('Extremely important' = 4,
+                         'Not at all important' = 0,
+                         'Not too important' = 1,
+                         'Refused' = -1,
+                         'Somewhat important' = 2,
+                         'Very important' = 3),
+  gov_priority = c('High' = 2,
+                   'Low' = 0,
+                   'Medium' = 1,
+                   'Refused' = -1,
+                   'Very high' = 3),
+  gov_more_less = c('Currently doing the right amount' = 2,
+                    'Less' = 1,
+                    'More' = 3,
+                    'Much less' = 0,
+                    'Much more' = 4,
+                    'Refused' = -1),
+  paris_support_oppose = c('Refused' = -1,
+                           'Somewhat oppose' = 1,
+                           'Somewhat support' = 2,
+                           'Strongly oppose' = 0,
+                           'Strongly support' = 3),
+  economic_impact = c('Have no effect on economic growth or jobs' = 1,
+                      'Improve economic growth and provide new jobs' = 2,
+                      'Reduce economic growth and cost jobs' = 0,
+                      'Refused' = -1),
+  renewable_more_less = c("Don't know" = -2,
+                          'Much less' = 0,
+                          'Much more' = 4,
+                          'Refused' = -1,
+                          'Same amount as today' = 2,
+                          'Somewhat less' = 1,
+                          'Somewhat more' = 3),
+  fossil_more_less = c("Don't know" = -2,
+                       'Much less' = 0,
+                       'Much more' = 4,
+                       'Refused' = -1,
+                       'Same amount as today' = 2,
+                       'Somewhat less' = 1,
+                       'Somewhat more' = 3),
+  climate_action = c('I am participating in an effort like this now' = 4,
+                     'I definitely would do it' = 3,
+                     'I definitely would not do it' = 0,
+                     'I probably would do it' = 2,
+                     'I probably would not do it' = 1,
+                     'Not sure' = -1.5,
+                     'Refused' = -1),
+  climate_info = c('I do not need any more information' = 0,
+                   'I need a little more information' = 1,
+                   'I need a lot more information' = 3,
+                   'I need some more information' = 2,
+                   'Refused' = -1),
+  age = c('18-29' = 0, '30-44' = 1, '45-59' = 2, '60+' = 3),
+  gender = c('Female' = 0, 'Male' = 1, 'Other/Prefer not to answer' = 2, 'Refused' = -1),
+  urbanicity = c('City' = 3, 'Refused' = -1, 'Suburb / Outskirts of a city' = 2, 'Town' = 1, 'Village or countryside' = 0)
+)
+
+
+```
+
+```{r}
+# Recoding using the Replacement_dict and saving it as a new dataset
+df21recoded2_new <- df21recoded2 %>%
+  mutate(
+    country = if_else(country %in% names(Replacement_dict$country), as.character(Replacement_dict$country[country]), country),
+    climate_awareness = if_else(climate_awareness %in% names(Replacement_dict$climate_awareness), as.character(Replacement_dict$climate_awareness[climate_awareness]), climate_awareness),
+    climate_happening = if_else(climate_happening %in% names(Replacement_dict$climate_happening), as.character(Replacement_dict$climate_happening[climate_happening]), climate_happening),
+    climate_beliefs = if_else(climate_beliefs %in% names(Replacement_dict$climate_beliefs), as.character(Replacement_dict$climate_beliefs[climate_beliefs]), climate_beliefs),
+    climate_worry = if_else(climate_worry %in% names(Replacement_dict$climate_worry), as.character(Replacement_dict$climate_worry[climate_worry]), climate_worry),
+    harm_personally = if_else(harm_personally %in% names(Replacement_dict$harm_personally), as.character(Replacement_dict$harm_personally[harm_personally]), harm_personally),
+    harm_future_gen = if_else(harm_future_gen %in% names(Replacement_dict$harm_future_gen), as.character(Replacement_dict$harm_future_gen[harm_future_gen]), harm_future_gen),
+    climate_importance = if_else(climate_importance %in% names(Replacement_dict$climate_importance), as.character(Replacement_dict$climate_importance[climate_importance]), climate_importance),
+    gov_priority = if_else(gov_priority %in% names(Replacement_dict$gov_priority), as.character(Replacement_dict$gov_priority[gov_priority]), gov_priority),
+    gov_more_less = if_else(gov_more_less %in% names(Replacement_dict$gov_more_less), as.character(Replacement_dict$gov_more_less[gov_more_less]), gov_more_less),
+    paris_support_oppose = if_else(paris_support_oppose %in% names(Replacement_dict$paris_support_oppose), as.character(Replacement_dict$paris_support_oppose[paris_support_oppose]), paris_support_oppose),
+    economic_impact = if_else(economic_impact %in% names(Replacement_dict$economic_impact), as.character(Replacement_dict$economic_impact[economic_impact]), economic_impact),
+    renewable_more_less = if_else(renewable_more_less %in% names(Replacement_dict$renewable_more_less), as.character(Replacement_dict$renewable_more_less[renewable_more_less]), renewable_more_less),
+    fossil_more_less = if_else(fossil_more_less %in% names(Replacement_dict$fossil_more_less), as.character(Replacement_dict$fossil_more_less[fossil_more_less]), fossil_more_less),
+    climate_action = if_else(climate_action %in% names(Replacement_dict$climate_action), as.character(Replacement_dict$climate_action[climate_action]), climate_action),
+    climate_info = if_else(climate_info %in% names(Replacement_dict$climate_info), as.character(Replacement_dict$climate_info[climate_info]), climate_info),
+    age = if_else(age %in% names(Replacement_dict$age), as.character(Replacement_dict$age[age]), age),
+    gender = if_else(gender %in% names(Replacement_dict$gender), as.character(Replacement_dict$gender[gender]), gender),
+    urbanicity = if_else(urbanicity %in% names(Replacement_dict$urbanicity), as.character(Replacement_dict$urbanicity[urbanicity]), urbanicity)
+  )
+
+```
+
+
+```{r}
+library(dplyr)
+
+df21recoded2_new <- df21recoded2_new %>%
+  select(-c(weight, starts_with("education_"), starts_with("income_"), region_in, region_us))
+
+```
+
+
+```{r}
+Replacement_dict2 <- list(
+    climate_awareness = c('I have never heard of it' = 0, 'I know a little about it' = 1, 'I know a lot about it' = 3, 'I know a moderate amount about it' = 2, 'Refused' = -1),
+  climate_happening = c("Don't know" = 1, 'No' = 2, 'Refused' = -1, 'Yes' = 3),
+  climate_beliefs = c('Caused about equally by human activities and natural changes' = 2,
+                      'Caused mostly by human activities' = 3,
+                      'Caused mostly by natural changes in the environment' = 1,
+                      "None of the above because climate change isn't happening" = 0,
+                      'Other' = -2,
+                      'Refused' = -1),
+  climate_worry = c('Not at all worried' = 0,
+                    'Not very worried' = 1,
+                    'Refused' = -1,
+                    'Somewhat worried' = 2,
+                    'Very worried' = 3),
+  harm_personally = c('A great deal' = 3,
+                      'A moderate amount' = 2,
+                      "Don't know" = -1.5,
+                      'Not at all' = 0,
+                      'Only a little' = 1,
+                      'Refused' = -1),
+  harm_future_gen = c('A great deal' = 3,
+                      'A moderate amount' = 2,
+                      "Don't know" = -1.5,
+                      'Not at all' = 0,
+                      'Only a little' = 1,
+                      'Refused' = -1),
+  climate_importance = c('Extremely important' = 4,
+                         'Not at all important' = 0,
+                         'Not too important' = 1,
+                         'Refused' = -1,
+                         'Somewhat important' = 2,
+                         'Very important' = 3),
+  gov_priority = c('High' = 2,
+                   'Low' = 0,
+                   'Medium' = 1,
+                   'Refused' = -1,
+                   'Very high' = 3),
+  gov_more_less = c('Currently doing the right amount' = 2,
+                    'Less' = 1,
+                    'More' = 3,
+                    'Much less' = 0,
+                    'Much more' = 4,
+                    'Refused' = -1),
+  paris_support_oppose = c('Refused' = -1,
+                           'Somewhat oppose' = 1,
+                           'Somewhat support' = 2,
+                           'Strongly oppose' = 0,
+                           'Strongly support' = 3),
+  economic_impact = c('Have no effect on economic growth or jobs' = 1,
+                      'Improve economic growth and provide new jobs' = 2,
+                      'Reduce economic growth and cost jobs' = 0,
+                      'Refused' = -1),
+  renewable_more_less = c("Don't know" = -2,
+                          'Much less' = 0,
+                          'Much more' = 4,
+                          'Refused' = -1,
+                          'Same amount as today' = 2,
+                          'Somewhat less' = 1,
+                          'Somewhat more' = 3),
+  fossil_more_less = c("Don't know" = -2,
+                       'Much less' = 0,
+                       'Much more' = 4,
+                       'Refused' = -1,
+                       'Same amount as today' = 2,
+                       'Somewhat less' = 1,
+                       'Somewhat more' = 3),
+  climate_action = c('I am participating in an effort like this now' = 4,
+                     'I definitely would do it' = 3,
+                     'I definitely would not do it' = 0,
+                     'I probably would do it' = 2,
+                     'I probably would not do it' = 1,
+                     'Not sure' = -1.5,
+                     'Refused' = -1),
+  climate_info = c('I do not need any more information' = 0,
+                   'I need a little more information' = 1,
+                   'I need a lot more information' = 3,
+                   'I need some more information' = 2,
+                   'Refused' = -1),
+  age = c('18-29' = 0, '30-44' = 1, '45-59' = 2, '60+' = 3),
+  gender = c('Female' = 0, 'Male' = 1, 'Other/Prefer not to answer' = 2, 'Refused' = -1),
+  urbanicity = c('City' = 3, 'Refused' = -1, 'Suburb / Outskirts of a city' = 2, 'Town' = 1, 'Village or countryside' = 0),
+  threat_20_years = c("Don't know" = -2,
+                      'Not a threat at all' = 0,
+                      'Refused' = -1,
+                      'Somewhat serious threat' = 1,
+                      'Very serious threat' = 2),
+  country_responsibility = c("Don't know" = 3,
+                             'Only if most other countries around the world reduce their pollution' = 1,
+                             'Only if the countries that produce the most pollution reduce their pollution' = 2,
+                             'Refused' = -1,
+                             'Regardless of what other countries do' = 3,
+                             'The country (or territory) where I live should not reduce its pollution' = 0),
+  most_responsible = c('Businesses' = 2,
+                       "Don't know" = -1.5,
+                       'Individual people' = 1,
+                       'Refused' = -1,
+                       'The country (or territory) where I live should not reduce its pollution' = 0,
+                       'The government' = 3),
+  organized_group = c('I am participating in an effort like this now' = 4,
+                      'I definitely would do it' = 3,
+                      'I definitely would not do it' = 0,
+                      'I probably would do it' = 2,
+                      'I probably would not do it' = 1,
+                      'Not sure' = -2,
+                      'Refused' = -1),
+  freq_hear = c('At least once a month' = 3,
+                'At least once a week' = 4,
+                "Don't know" = -2,
+                'Never' = 0,
+                'Once a year or less often' = 1,
+                'Refused' = -1,
+                'Several times a year' = 2),
+  education = c('Advanced vocational' = 7,
+                "Bachelor's or more" = 9,
+                'High school' = 6,
+                'Less than high school' = 4,
+                'Less than upper secondary' = 0,
+                'Lower or upper secondary' = 1,
+                'Post secondary' = 5,
+                'Some college' = 8,
+                'Upper secondary' = 3,
+                'Upper secondary or less' = 2),
+country= c('Argentina' = 0,
+  'Australia' = 1,
+  'Brazil' = 2,
+  'Canada' = 3,
+  'Colombia' = 4,
+  'Costa Rica' = 5,
+  'Czech Republic' = 6,
+  'Egypt' = 7,
+  'France' = 8,
+  'Germany' = 9,
+  'India' = 10,
+  'Indonesia' = 11,
+  'Ireland' = 12,
+  'Italy' = 13,
+  'Japan' = 14,
+  'Malaysia' = 15,
+  'Mexico' = 16,
+  'Netherlands' = 17,
+  'Nigeria' = 18,
+  'Philippines' = 19,
+  'Poland' = 20,
+  'Russia' = 21,
+  'Saudi Arabia' = 22,
+  'South Africa' = 23,
+  'Spain' = 24,
+  'Taiwan' = 25,
+  'Thailand' = 26,
+  'Turkey' = 27,
+  'United Kingdom' = 28,
+  'United States' = 29,
+  'Vietnam' = 30,
+  'Asian & Pacific Islands' = 31,
+  'Paraguay' = 32,
+  'El Salvador' = 33,
+  'Croatia' = 34,
+  'Pakistan' = 35,
+  'South Korea' = 36,
+  'Cyprus' = 37,
+  'Nicaragua' = 38,
+  'Bolivia (Plurinational State of)' = 39,
+  'Finland' = 40,
+  'Zambia' = 41,
+  'Kenya' = 42,
+  'Malawi' = 43,
+  'Trinidad and Tobago' = 44,
+  'Benin' = 45,
+  'Azerbaijan' = 46,
+  'Hong Kong' = 47,
+  'Chile' = 48,
+  'Sub-Saharan Africa' = 49,
+  'Puerto Rico' = 50,
+  'Lithuania' = 51,
+  'Uruguay' = 52,
+  'Botswana' = 53,
+  'Morocco' = 54,
+  'Oman' = 55,
+  'Nepal' = 56,
+  'Haiti' = 57,
+  'Serbia' = 58,
+  "Cote d'Ivoire" = 59,
+  'Portugal' = 60,
+  'Uzbekistan' = 61,
+  'Honduras' = 62,
+  'Yemen' = 63,
+  'Libya' = 64,
+  'Bulgaria' = 65,
+  'Austria' = 66,
+  'Tunisia' = 67,
+  'Algeria' = 68,
+  'Peru' = 69,
+  'Israel' = 70,
+  'Armenia' = 71,
+  'Australia' = 72,
+  'Guatemala' = 73,
+  'Jamaica' = 74,
+  'New Zealand' = 75,
+  'Sri Lanka' = 76,
+  'Netherlands' = 77,
+  'Burkina Faso' = 78,
+  'Lebanon' = 79,
+  'Dominican Republic' = 80,
+  'Singapore' = 81,
+  'Senegal' = 82,
+  'Taiwan' = 83,
+  'Cameroon' = 84,
+  'Congo (Democratic Republic of the)' = 85,
+  'Ghana' = 86,
+  'Cambodia' = 87,
+  'Switzerland' = 88,
+  'Czechia' = 89,
+  'Jordan' = 90,
+  'Saudi Arabia' = 91,
+  'Bangladesh' = 92,
+  'Caribbean' = 93,
+  'Belgium' = 94,
+  'Philippines' = 95,
+  'Ireland' = 96,
+  'Spain' = 97,
+  'Bosnia and Herzegovina' = 98,
+  'Argentina' = 99,
+  'Romania' = 100,
+  'Vietnam' = 101,
+  'Albania' = 102,
+  'Panama' = 103,
+  'Sweden' = 104,
+  'Ecuador' = 105,
+  'Indonesia' = 106,
+  'North MAcedonia' = 107,
+  'Turkey' = 108,
+  'Hungary' = 109,
+  'Norway' = 110,
+  'Qatar' = 111,
+  'Tanzania' = 112,
+  'Iraq' = 113,
+  'Angola' = 114,
+  'Mozambique' = 115,
+  'United Arab Emirates' = 116,
+  'Kuwait' = 117,
+  'Kosovo' = 118,
+  'Slovakia' = 119,
+  'Greece' = 120,
+  'Denmark' = 121,
+  "Lao People's Democratic Republic" = 122)
+)
+
+```
+
+```{r}
+library(dplyr)
+
+df22recoded2_new <- df22recoded2 %>%
+  mutate(
+    climate_awareness = recode(climate_awareness, !!!Replacement_dict2$climate_awareness),
+    climate_happening = recode(climate_happening, !!!Replacement_dict2$climate_happening),
+    climate_beliefs = recode(climate_beliefs, !!!Replacement_dict2$climate_beliefs),
+    climate_worry = recode(climate_worry, !!!Replacement_dict2$climate_worry),
+    harm_personally = recode(harm_personally, !!!Replacement_dict2$harm_personally),
+    harm_future_gen = recode(harm_future_gen, !!!Replacement_dict2$harm_future_gen),
+    climate_importance = recode(climate_importance, !!!Replacement_dict2$climate_importance),
+    gov_priority = recode(gov_priority, !!!Replacement_dict2$gov_priority),
+    economic_impact = recode(economic_impact, !!!Replacement_dict2$economic_impact),
+    renewable_more_less = recode(renewable_more_less, !!!Replacement_dict2$renewable_more_less),
+    fossil_more_less = recode(fossil_more_less, !!!Replacement_dict2$fossil_more_less),
+    age = recode(age, !!!Replacement_dict2$age),
+    gender = recode(gender, !!!Replacement_dict2$gender),
+    urbanicity = recode(urbanicity, !!!Replacement_dict2$urbanicity),
+    threat_20_years = recode(threat_20_years, !!!Replacement_dict2$threat_20_years),
+    country_responsibility = recode(country_responsibility, !!!Replacement_dict2$country_responsibility),
+    most_responsible = recode(most_responsible, !!!Replacement_dict2$most_responsible),
+    organized_group = recode(organized_group, !!!Replacement_dict2$organized_group),
+    freq_hear = recode(freq_hear, !!!Replacement_dict2$freq_hear),
+    education = recode(education, !!!Replacement_dict2$education),
+    country=recode(country,!!!Replacement_dict2$country)
+  )
+
+
+```
+
+
+```{r}
+library(dplyr)
+
+df22recoded2_new <- df22recoded2_new %>%
+  select(-c(weight, region_de, region_fr, education,region_in, region_us, weight_region_fr, weight_region_de))
+
+```
+
+```{r}
+# recode negative values as NA 
+
+df21recoded2_NA <- df21recoded2_new %>%
+  select(-id) %>%
+  mutate_all(~ifelse(. < 0, NA, .))
+
+df22recoded2_NA <- df22recoded2_new %>%
+  select(-id) %>%
+  mutate_all(~ifelse(. < 0, NA, .))
+
+```
+
+```{r}
+# Check for missing values in each column
+sapply(df21recoded2_NA, function(x) sum(is.na(x)))
+```
+
+```{r}
+df21recoded_subset <- subset(df21recoded2_NA, select=-c(urbanicity,age,gender,country))
+df22recoded_subset <- subset(df22recoded2_NA, select=-c(urbanicity,age,gender,country))
+```
+
+
+
+```{r}
+# convert to numeric after recoding
+library(dplyr)
+
+df21recoded_subset <- df21recoded_subset %>%
+  mutate(across(everything(), as.numeric))
+
+df22recoded_subset <- df22recoded_subset %>%
+  mutate(across(everything(), as.numeric))
+
+df21recoded2_NA <- df21recoded2_NA %>%
+  mutate(across(everything(), as.numeric))
+
+df22recoded2_NA <- df22recoded2_NA %>%
+  mutate(across(everything(), as.numeric))
+
+```
+
+```{r}
+write.csv(df21recoded_subset_clean, "df21recoded_subset_clean.csv")
+write.csv(df22recoded_subset_clean, "df22recoded_subset_clean.csv")
+write.csv(df21recoded_subset, "df21recoded_subset.csv")
+write.csv(df22recoded_subset, "df22recoded_subset.csv")
+write.csv(df21recoded2_NA, "df21recoded2_NA.csv")
+write.csv(df22recoded2_NA, "df22recoded2_NA.csv")
+write.csv(df21recoded2_NA_clean, "df21recoded2_NA_clean.csv")
+write.csv(df22recoded2_NA_clean, "df22recoded2_NA_clean.csv")
+
+```
+
+
+
+```{r}
+#explore data
+summary(df21recoded_subset)
+hist(df21recoded_subset$climate_beliefs)
+```
+```{r}
+str(df21recoded_subset)
+```
+
+
+```{r}
+library(psych)
+description21<- describe(df21recoded_subset)
+print(description21)
+```
+```{r}
+
+age_frequencies <- table(df21recoded2_NA$age)
+
+# Calculate percentages
+age_percentages <- (age_frequencies / sum(age_frequencies)) * 100
+
+# Print out the percentages
+print(age_percentages)
+
+
+```
+```{r}
+gender_frequencies <- table(df21recoded2_NA$gender)
+
+# Calculate percentages
+gender_percentages <- (gender_frequencies / sum(gender_frequencies)) * 100
+
+# Print out the percentages
+print(gender_percentages)
+```
+```{r}
+
+age_frequencies2 <- table(df22recoded2_NA$age)
+
+# Calculate percentages
+age_percentages2 <- (age_frequencies2 / sum(age_frequencies2)) * 100
+
+# Print out the percentages
+print(age_percentages2)
+```
+
+```{r}
+gender_frequencies2 <- table(df22recoded2_NA$gender)
+
+# Calculate percentages
+gender_percentages2 <- (gender_frequencies2 / sum(gender_frequencies2)) * 100
+
+# Print out the percentages
+print(gender_percentages2)
+```
+
+```{r}
+# List of variable names
+variables <- c( "climate_awareness", "climate_happening", "climate_beliefs", 
+               "climate_worry", "harm_personally", "harm_future_gen", "climate_importance", 
+               "gov_priority", "gov_more_less", "paris_support_oppose", "economic_impact", 
+               "renewable_more_less", "fossil_more_less", "climate_action", "climate_info")
+```
+
+
+```{r}
+# Create histograms for each variable
+for (variable in variables) {
+  hist(df21recoded_subset[[variable]], main = paste("Histogram of", variable), xlab = variable)
+}
+```
+
+
+```{r}
+# Create density plots for each variable
+for (variable in variables) {
+  plot(density(df21recoded_subset[[variable]], na.rm = TRUE), main = paste("Density Plot of", variable), xlab = variable)
+}
+
+```
+
+```{r}
+# estimating a network with polychoric correlations as input and GGM with Extended Bayesian Criteron and graphical LASSO regularization
+Network21_EBIC_poly <- estimateNetwork(df21recoded_subset,default = "EBICglasso", tuning = .5, corMethod = "cor_auto")
+```
+```{r}
+str(df21recoded_subset)
+```
+
+```{r}
+# Increase resolution to 300 ppi and set a larger size for the plot
+png("Network21_EBIC_poly.png", width = 2000, height = 1500, res = 300)
+plot(Network21_EBIC_poly, layout = "spring")
+
+```
+
+
+
+```{r}
+png("Network21_EBIC_poly_c.png", width = 2000, height = 1500, res = 300)
+centralityPlot(Network21_EBIC_poly, include = c("Strength", "Betweenness", "Closeness"))
+```
+
+
+```{r}
+# nonparametric bootstrap for stability of edges and of edge differences
+set.seed(1)
+# Edge weight accuracy test
+boot1 <-bootnet(Network21_EBIC_poly, nBoots = 1000,type="nonparametric",
+nCores = 8, statistics = "edge")
+plot(boot1, labels = FALSE,
+  order = "sample")
+```
+
+```{r}
+# visualize results 
+png("bootnet1CI_plot.png", width = 2000, height = 1500)
+## CI around edges
+plot(boot1, plot="area", order="sample",font_size = 9, legend= FALSE)
+```
+
+
+```{r}
+png("bootnet1_diff.png", width = 2000, height = 1500)
+## differences between edges
+plot(boot1, plot="difference", order="sample", onlyNonZero=FALSE, labels=TRUE)
+```
+
+
+```{r eval=FALSE}
+# case dropping bootstrap for centrality stability
+boot1_centrality <- bootnet(Network21_EBIC_poly,default="EBICglasso", nBoots = 2500, type = "case", nCores = 8, computeCentrality = TRUE, statistics=c("strength"), caseMin = .05,caseMax = .95,caseN=19)
+# visualize results
+# Plotting centrality stability
+plot(boot1_centrality, type = "CS", order="mean")
+plot(boot1_centrality, type = "centrality")
+```
+```{r}
+
+boot_data <- boot1_centrality$bootTable
+
+# Calculate the confidence intervals for each node
+library(dplyr)
+
+confidence_intervals <- boot_data %>%
+  group_by(node1) %>%
+  summarise(lower_ci = quantile(value, probs = 0.025),
+            upper_ci = quantile(value, probs = 0.975),
+            mean_strength = mean(value)) %>%
+  ungroup()
+
+library(ggplot2)
+
+ggplot(confidence_intervals, aes(x = node1, y = mean_strength)) +
+  geom_point() +
+  geom_segment(aes(x = node1, xend = node1, y = lower_ci, yend = upper_ci), color = "blue") +
+  theme_minimal() +
+  coord_flip() # Flipping coordinates for a horizontal lollipop chart
+
+
+```
+
+```{r}
+boot_data <- boot1_centrality$bootTable
+
+# Calculate the confidence intervals for each node
+library(dplyr)
+
+confidence_intervals <- boot_data %>%
+  group_by(node1) %>%
+  summarise(lower_ci = quantile(value, probs = 0.025),
+            upper_ci = quantile(value, probs = 0.975),
+            mean_strength = mean(value)) %>%
+  ungroup() %>%
+  arrange(desc(mean_strength)) # Add this line to arrange by mean_strength
+
+# Now you can use ggplot2 to make a lollipop chart
+library(ggplot2)
+
+ggplot(confidence_intervals, aes(x = reorder(node1, -mean_strength), y = mean_strength)) +
+  geom_point() +
+  geom_segment(aes(x = node1, xend = node1, y = lower_ci, yend = upper_ci), color = "blue") +
+  theme_minimal() +
+  coord_flip() # Flipping coordinates for a horizontal lollipop chart
+
+```
+```{r}
+png("Boot1_centralitystability.png", width = 2000, height = 1500, res = 300)
+# Assuming boot1_centrality is your list object and it has been loaded in R
+boot_data <- boot1_centrality$bootTable
+
+# Calculate the confidence intervals for each node
+library(dplyr)
+
+confidence_intervals <- boot_data %>%
+  group_by(node1) %>%
+  summarise(lower_ci = quantile(value, probs = 0.025),
+            upper_ci = quantile(value, probs = 0.975),
+            mean_strength = mean(value)) %>%
+  ungroup() %>%
+  arrange(desc(mean_strength)) # Arrange by mean_strength
+
+library(ggplot2)
+
+ggplot(confidence_intervals, aes(x = reorder(node1, -mean_strength), y = mean_strength)) +
+  geom_point() +
+  geom_segment(aes(x = node1, xend = node1, y = lower_ci, yend = upper_ci), color = "blue") +
+  theme_minimal() +
+  coord_flip() + # Flipping coordinates for a horizontal lollipop chart
+  labs(y = "Centrality (node strength)", x = "") # Renaming the y-axis and removing the x-axis label
+
+```
+```{r}
+# Assuming boot1_centrality is your list object and it has been loaded in R
+boot_data <- boot1_centrality$bootTable
+
+# Calculate the confidence intervals for each node
+library(dplyr)
+
+confidence_intervals <- boot_data %>%
+  group_by(node1) %>%
+  summarise(lower_ci = quantile(value, probs = 0.025),
+            upper_ci = quantile(value, probs = 0.975),
+            mean_strength = mean(value)) %>%
+  ungroup() %>%
+  arrange(desc(mean_strength)) # Arrange by mean_strength
+
+# Now you can use ggplot2 to make a lollipop chart with shaded CI
+library(ggplot2)
+
+ggplot(confidence_intervals, aes(x = reorder(node1, -mean_strength), y = mean_strength)) +
+  geom_ribbon(aes(ymin = lower_ci, ymax = upper_ci), fill = "grey", alpha = 0.5) +
+  geom_point() +
+  geom_segment(aes(x = node1, xend = node1, y = lower_ci, yend = upper_ci), color = "black") +
+  theme_minimal() +
+  coord_flip() + # Flipping coordinates for a horizontal lollipop chart
+  labs(y = "Centrality (node strength)", x = "") # Renaming the y-axis and removing the x-axis label
+
+```
+
+```{r}
+library(dplyr)
+library(ggplot2)
+
+confidence_intervals <- boot_data %>%
+  group_by(node1) %>%
+  summarise(lower_ci = quantile(value, probs = 0.025),
+            upper_ci = quantile(value, probs = 0.975),
+            mean_strength = mean(value)) %>%
+  ungroup()
+
+# Now you can use ggplot2 to make a lollipop chart
+ggplot(confidence_intervals, aes(x = node1, y = mean_strength)) +
+  geom_segment(aes(x = node1, xend = node1, y = lower_ci, yend = upper_ci), color = "grey") + # CI lines in grey
+  geom_point(size = 3, color = "black") + # Increase point size and set to black
+  theme_minimal() +
+  coord_flip() + # Flipping coordinates for a horizontal lollipop chart
+  theme(
+    panel.grid.major.y = element_blank(), # Remove horizontal grid lines
+    panel.grid.major.x = element_line(color = "grey", size = 0.2), # Lighten the vertical grid lines
+    panel.background = element_rect(fill = "white"), # Set panel background to white
+    axis.text.y = element_text(size = 7) # Adjust text size for y axis labels if necessary
+  )
+
+```
+
+```{r}
+#Zoom in on specific nodes
+plot(boot1_centrality, perNode=TRUE, "strength")
+```
+
+
+```{r}
+# estimate correlation stability coefficients for strength centrality
+corStability(boot1_centrality)
+```
+
+
+
+```{r}
+summary(boot1)
+```
+```{r}
+summary(boot1_centrality)
+```
+
+
+
+```{r}
+
+# using the default functions of bootnet, estimating network with pcor (without transformation)
+library("bootnet")
+Network21_EBIC_pcor <- estimateNetwork(df21recoded_subset,
+ default = "EBICglasso",tuning = 0.5)
+
+#with threshold (certain nodes have been dropped here as per below graph)
+
+network_pcor21 <- estimateNetwork(df21recoded_subset, default = "pcor", threshold = "sig", alpha = 0.05)
+
+```
+
+
+```{r}
+plot(Network21_EBIC_pcor, layout = "spring")
+```
+```{r}
+centralityPlot(Network21_EBIC_pcor, include = c("Strength", "Betweenness", "Closeness"))
+```
+
+
+```{r}
+plot(network_pcor21, layout = "spring")
+```
+```{r}
+centralityPlot(network_pcor21, include = c("Strength", "Betweenness", "Closeness"))
+
+
+```
+
+
+
+
+```{r}
+library (bootnet)
+centrality_results <- centrality(Network21_EBIC_poly)
+print(centrality_results)
+```
+
+
+
+```{r}
+centralityPlot(list(Network21_EBIC_pcor=Network21_EBIC_pcor,network_pcor21=network_pcor21))
+```
+
+
+```{r}
+library("qgraph")
+plot(Network21_EBIC_pcor, layout = "spring")
+```
+
+```{r}
+##### COMPARE centrality
+centralityPlot(list(Network21_EBIC_poly=Network21_EBIC_poly,Network21_EBIC_pcor=Network21_EBIC_pcor))
+```
+```{r eval=FALSE}
+# Edge-weight accuracy test 
+boot1_b <-bootnet(Network21_EBIC_pcor, nBoots = 1000, type="nonparametric",
+nCores = 8)
+
+```
+```{r eval=FALSE}
+
+# Edge-weight accuracy test plot
+plot(boot1_b, labels = FALSE,
+  order = "sample")
+
+```
+```{r eval=FALSE}
+summary(boot1_b)
+```
+
+```{r eval=FALSE}
+plot(boot1_b)
+```
+
+
+```{r eval=FALSE}
+#Testing for significant differences
+differenceTest(boot1_b,1,2,"strength")
+
+```
+The below code plots the difference tests of node strength between all pairs of edge-weights. Here the plot argument has to be used because the function normally defaults to plotting bootstrapped CIs for edge-weights, the onlyNonZero argument sets so that only edges are shown that are nonzero in the estimated network, and order = "sample" orders the edge-weights from the most positive to the most negative edge-weight in the sample network.
+```{r eval=FALSE}
+plot(boot1_b, "edge", plot = "difference", onlyNonZero = TRUE, order = "sample")
+
+```
+We can use a similar code for comparing node strength.In which we did not have to specify the plot argument as it is set to the "difference" by default when the statistic is a centrality index.
+```{r eval=FALSE}
+plot(boot1_b, "strength")
+```
+
+```{r eval=FALSE}
+#centrality stability test
+boot2_b <- bootnet(Network21_EBIC_pcor, nBoots = 1000, type = "case", nCores = 8)
+
+#Zoom in on specific nodes
+plot(boot2_b, perNode=TRUE, "strength")
+
+```
+
+```{r}
+plot(network_pcor21)
+```
+
+
+
+```{r eval=FALSE}
+# Run bootstrap on pcor with threshold
+
+# Edge-weight accuracy test 
+boot1_threhold <-bootnet(network_pcor21, nBoots = 1000, type="nonparametric",
+nCores = 8)
+```
+
+```{r eval=FALSE}
+plot(boot1_threhold)
+plot(boot1_threhold, labels = FALSE,
+  order = "sample")
+```
+
+```{r eval=FALSE}
+#centrality stability test
+boot_centrality_threshold <- bootnet(network_pcor21, nBoots = 1000, type = "case", nCores = 8)
+
+#Zoom in on specific nodes
+plot(boot_centrality_threshold, perNode=TRUE, "strength")
+```
+
+The NPN transformation works by applying a rank-based transformation (like the inverse normal transformation) to each variable in the dataset. This transformation converts the ranks of each variable into the quantiles of a standard normal distribution, which helps to reduce the impact of outliers and can make the distribution of each variable more symmetric.
+
+```{r}
+# Estimate network 2 - Apply nonparanormal transformation to data first, then estimate network with EBIC using partial correlations - [skip this]
+library(huge)
+data21_transformed<-huge.npn(df21recoded_subset)
+```
+
+```{r}
+summary(data21_transformed)
+```
+
+```{r}
+data21_transformed <- as.data.frame(data21_transformed)
+
+```
+
+```{r}
+# Install and load the psych package
+
+library(psych)
+
+# Compute summary statistics for all variables
+description21_transformed<- describe(data21_transformed)
+print(description21_transformed)
+
+
+```
+
+```{r}
+for (variable in variables) {
+  hist(data21_transformed[[variable]], main = paste("Histogram of", variable), xlab = variable)
+}
+```
+
+```{r}
+# Create density plots for each variable
+for (variable in variables) {
+  plot(density(data21_transformed[[variable]], na.rm = TRUE), main = paste("Density Plot of", variable), xlab = variable)
+}
+```
+```{r}
+# estiimating a network with pearson cor as input and GGM with Extended Bayesian Criteron and graphical LASSO regularization
+Network21_transformed <- estimateNetwork(data21_transformed,default = "EBICglasso", tuning = .5, corMethod = "cor")
+```
+```{r}
+plot(Network21_transformed, layout = 'spring') 
+```
+```{r}
+centralityPlot(Network21_transformed, include = c("Strength", "Betweenness", "Closeness"))
+```
+
+
+```{r}
+# estimating a network with npn transformation as input and GGM with Extended Bayesian Criteron and graphical LASSO regularization
+Network21_npn <- estimateNetwork(df21recoded_subset,default = "EBICglasso", tuning = 0.5, corMethod = "npn")
+```
+```{r}
+plot(Network21_npn, layout = 'spring') 
+```
+```{r}
+centralityPlot(Network21_npn, include = c("Strength", "Betweenness", "Closeness"))
+```
+```{r eval=FALSE}
+# Edge weight accuracy network pcor with threshold
+boot21__accuracy_threhold <-bootnet(network_pcor21, nBoots = 1000, type="nonparametric",
+nCores = 8)
+```
+```{r eval=FALSE}
+plot(boot21__accuracy_threhold, labels = FALSE,
+  order = "sample")
+```
+
+```{r eval=FALSE}
+# Edge weight accuracy network npn test
+boot21_npn <-bootnet(Network21_npn, nBoots = 1000, type="nonparametric",
+nCores = 8)
+```
+
+
+```{r eval=FALSE}
+# Edge-weight accuracy test plot
+plot(boot21_npn, labels = FALSE,
+  order = "sample")
+```
+```{r eval=FALSE}
+#Plot split-0 BCIs (labels =False to turn off labels on the y axis if network has many nodes)
+plot(boot21_npn, plot="interval", order= "sample", split0= TRUE, labels= FALSE)
+
+```
+```{r eval=FALSE}
+#Centrality differences plot
+plot(boot21_npn,"strength", order="sample")
+
+```
+```{r eval=FALSE}
+# Accuracy of centrality indeces
+boot_npn_accuracy <- bootnet(Network21_npn, nBoots=1000, nCores=8, type="case")
+plot(boot_npn_accuracy)
+
+```
+```{r eval=FALSE}
+plot(boot_npn_accuracy)
+```
+
+```{r eval=FALSE}
+#Zoom in on specific nodes
+plot(boot_npn_accuracy, perNode=TRUE, "strength")
+```
+
+
+
+```{r}
+# compare network npn with the one where data was transformed prior to estimation
+centralityPlot(list(Network21_npn=Network21_npn,Network21_transformed= Network21_transformed))
+```
+They're identical. 
+
+```{r}
+centralityPlot(Network21_npn, include = c("Strength", "Betweenness", "Closeness"))
+centralityPlot(Network21_EBIC_pcor, include = c("Strength", "Betweenness", "Closeness"))
+centralityPlot(network_pcor21, include = c("Strength", "Betweenness", "Closeness"))
+centralityPlot(Network21_EBIC_poly, include = c("Strength", "Betweenness", "Closeness"))
+```
+
+```{r}
+##### COMPARE centrality
+centralityPlot(list(Network21_EBIC_poly=Network21_EBIC_poly,Network21_EBIC_pcor=Network21_EBIC_pcor,Network21_npn=Network21_npn,network_pcor21=network_pcor21,Network21_transformed=Network21_transformed))
+```
+```{r}
+library (bootnet)
+library(qgraph)
+centralityPlot(list(Network21_EBIC_poly=Network21_EBIC_poly))
+```
+
+```{r}
+##### COMPARE centrality (MAIN NETWORKS 2 with pcor with and without nonparanormal transformation, and 1 with polychoric cor without any transformation)
+centralityPlot(list(Network21_EBIC_poly=Network21_EBIC_poly,Network21_EBIC_pcor=Network21_EBIC_pcor,Network21_npn=Network21_npn, network_pcor21=network_pcor21), include = c("Strength", "Betweenness", "Closeness"))
+```
+```{r}
+centralityPlot(list(Network21_EBIC_poly=Network21_EBIC_poly), include = c("Strength", "Betweenness", "Closeness"))
+```
+
+
+
+
+```{r}
+#comparing netwroks with pcor with and without nonporanormal transformation
+centralityPlot(list(Network21_EBIC_pcor=Network21_EBIC_pcor,Network21_npn=Network21_npn))
+```
+```{r}
+plot(Network21_EBIC_poly)
+```
+
+
+```{r eval=FALSE}
+####### WLS estimation in Psychonetrics
+library(psychonetrics)
+modelpsych<-ggm(df21recoded_subset,ordered=TRUE)
+modelpsych<-modelpsych %>% runmodel
+modelpsych %>% getmatrix("omega")
+modelpsych %>% parameters
+
+```
+
+
+
+```{r eval=FALSE}
+######## Bayesian estimation with BGGM
+library(BGGM)
+fit<-explore(df21recoded_subset,type="ordinal")
+```
+
+```{r}
+sapply(df21recoded_subset, class)
+
+```
+
+```{r}
+######Analyze data 2022
+# Compute summary statistics for all variables
+summary_stats22 <- describe(df22recoded_subset)
+print(summary_stats22)
+```
+
+
+```{r}
+##Explore data22
+variables22 <- names(df22recoded_subset)
+# Create histograms for each variable
+for (variable in variables22) {
+  hist(df22recoded_subset[[variable]], main = paste("Histogram of", variable), xlab = variable)
+}
+
+```
+
+```{r}
+# Create density plots for each variable
+for (variable in variables22) {
+  plot(density(df22recoded_subset[[variable]], na.rm = TRUE), main = paste("Density Plot of", variable), xlab = variable)
+}
+
+```
+
+```{r}
+library(psych)
+description22<- describe(df22recoded_subset)
+print(description22)
+```
+```{r}
+library(bootnet)
+# Estimate network for data 22 with polychoric cor as input and EBIC with LASSO
+Network22_EBIC_poly <- estimateNetwork(df22recoded_subset,default = "EBICglasso", tuning = .5, corMethod = "cor_auto")
+```
+```{r}
+png("Network22_EBIC_poly.png", width = 2000, height = 1500, res = 300)
+plot(Network22_EBIC_poly)
+```
+```{r}
+summary(Network22_EBIC_poly$graph)
+```
+
+```{r}
+png("Network21_EBIC_poly_c.png", width = 2000, height = 1500, res = 300)
+centralityPlot(Network22_EBIC_poly, include = c("Strength", "Betweenness", "Closeness"))
+```
+
+
+
+```{r}
+plot(Network22_EBIC_poly, layout="spring")
+```
+```{r}
+##accuracy tests for 22
+
+# Edge weight accuracy 
+boot_2 <-bootnet(Network22_EBIC_poly, nBoots = 1000, type="nonparametric",
+nCores = 8)
+```
+
+
+```{r}
+png("bootnet2CI_plot.png", width = 2000, height = 1500)
+# Plot CI around edge weights
+plot(boot_2, plot="area", order="sample",font_size = 9, legend= FALSE)
+
+```
+Given that bootstrapping can be computationally intensive, save the results with saveRDS(boot_2, file = "boot_2.RDS") and load them later with boot_2 <– readRDS("boot_2.RDS") so we need not estimate bootstraps again every time we run the R code.
+```{r}
+#Plot split-0 BCIs (labels =False to turn off labels on the y axis if network has many nodes)
+plot(boot_2, plot="interval", order= "sample", split0= TRUE, labels= FALSE)
+```
+```{r eval=FALSE}
+# save file
+saveRDS(boot_2, file = "boot_2.RDS")
+#check later
+boot_2 <- readRDS("boot_2.RDS")
+```
+
+```{r eval=FALSE}
+#Edge weights difference plot (argument onlyNonZero=TRUE to show only edges that were included as non-zero) 
+plot(boot_2,"edge",plot="difference",onlyNonZero=TRUE,order="sample")
+```
+
+```{r eval=FALSE}
+#Centrality differences plot
+plot(boot_2,"strength", order="sample")
+```
+```{r}
+# Accuracy of centrality indeces
+# case dropping bootstrap for centrality stability
+boot2_centrality <- bootnet(Network22_EBIC_poly,default="EBICglasso", nBoots = 1000, type = "case", nCores = 8, computeCentrality = TRUE, statistics=c("strength"), caseMin = .05,caseMax = .95,caseN=19)
+boot_22b <- bootnet(Network22_EBIC_poly, nBoots=1000, nCores=8, type="case")
+plot(boot_22b)
+
+#Zoom in on specific nodes
+plot(boot_22b, perNode=TRUE, "strength")
+```
+The information of the case-drop bootstrap can be summarized in the correlation stability (CS) coefficient, where ‘CS(cor = 0.7)’ represents the maximum proportion of cases that can be dropped, such that in 95% of the samples the correlation between original centrality indices and centrality of networks based on subsets is 0.7 or higher (Network Psychometrics with R, p. 242)
+
+```{r}
+corStability(boot2_centrality)
+plot(boot2_centrality, statistics = c("strength"), CIstyle = "quantiles")
+```
+```{r}
+# Check the data types
+boot2_centrality$sampleTable$value
+```
+```{r}
+png("Boot2_centralitystability.png", width = 2000, height = 1500, res = 300)
+# Assuming boot1_centrality is your list object and it has been loaded in R
+boot_data2 <- boot2_centrality$bootTable
+
+# Calculate the confidence intervals for each node
+library(dplyr)
+
+confidence_intervals <- boot_data2 %>%
+  group_by(node1) %>%
+  summarise(lower_ci = quantile(value, probs = 0.025),
+            upper_ci = quantile(value, probs = 0.975),
+            mean_strength = mean(value)) %>%
+  ungroup() %>%
+  arrange(desc(mean_strength)) # Arrange by mean_strength
+
+# Now you can use ggplot2 to make a lollipop chart
+library(ggplot2)
+
+ggplot(confidence_intervals, aes(x = reorder(node1, -mean_strength), y = mean_strength)) +
+  geom_point() +
+  geom_segment(aes(x = node1, xend = node1, y = lower_ci, yend = upper_ci), color = "blue") +
+  theme_minimal() +
+  coord_flip() + # Flipping coordinates for a horizontal lollipop chart
+  labs(y = "Centrality (node strength)", x = "") # Renaming the y-axis and removing the x-axis label
+
+```
+
+
+
+```{r}
+# Estimate network 22 with npn and pcor
+Network22_npn <- estimateNetwork(df22recoded_subset,default = "EBICglasso", tuning = 0.5, corMethod = "npn")
+Network22_EBIC_pcor<- estimateNetwork(df22recoded_subset, default = "EBICglasso",tuning = 0.5,corMethod = "cor")
+network22_pcor <- estimateNetwork(df22recoded_subset, default = "pcor", threshold = "sig", alpha = 0.05)
+
+```
+```{r}
+centralityPlot(Network22_npn, include = c("Strength", "Betweenness", "Closeness"))
+centralityPlot(Network22_EBIC_pcor, include = c("Strength", "Betweenness", "Closeness"))
+centralityPlot(network22_pcor, include = c("Strength", "Betweenness", "Closeness"))
+```
+```{r eval=FALSE}
+# Edge weight accuracy  tests for 22 remainder
+boot_2_pcor <-bootnet(Network22_EBIC_pcor, nBoots = 1000, type="nonparametric",
+nCores = 8)
+```
+```{r eval=FALSE}
+# Edge weight accuracy 
+boot_22_threshold <-bootnet(Network22_npn, nBoots = 1000, type="nonparametric",
+nCores = 8)
+```
+
+```{r eval=FALSE}
+boot_22_npn <-bootnet(network22_pcor, nBoots = 1000, type="nonparametric",
+nCores = 8)
+```
+```{r eval=FALSE}
+plot(boot_2_pcor)
+plot(boot_22_threshold)
+plot(boot_22_npn)
+```
+```{r eval=FALSE}
+plot(boot_2_pcor, order="sample")
+plot(boot_22_threshold, order="sample")
+plot(boot_22_npn, order="sample")
+```
+```{r eval=FALSE}
+# Accuracy of centrality indeces
+boot_22_accuracy_EBICpcor <- bootnet(Network22_EBIC_pcor, nBoots=1000, nCores=8, type="case")
+boot_22_accuracy_threshold <- bootnet(network22_pcor, nBoots=1000, nCores=8, type="case")
+boot_22_accuracy_npn <- bootnet(Network22_npn, nBoots=1000, nCores=8, type="case")
+
+```
+```{r eval=FALSE}
+#Zoom in on specific nodes
+plot(boot_22_accuracy_EBICpcor, perNode=TRUE, "strength")
+plot(boot_22_accuracy_threshold, perNode=TRUE, "strength")
+plot(boot_22b, perNode=TRUE, "strength")
+plot(boot_22_accuracy_npn, perNode=TRUE, "strength")
+
+```
+
+```{r}
+##### COMPARE centrality (MAIN NETWORKS 2 with pcor with and without nonparanormal transformation, and 1 with polychoric cor without any transformation) fro 2022
+centralityPlot(list(Network22_EBIC_poly=Network22_EBIC_poly,Network22_EBIC_pcor=Network22_EBIC_pcor), include = c("Strength", "Betweenness", "Closeness"))
+```
+```{r}
+centralityPlot(list(Network22_npn=Network22_npn,Network21_npn=Network21_npn), include = c("Strength", "Betweenness", "Closeness"))
+```
+In networks where the nonparanomral transformation has been applied, Climate importance seems to be the most central node. Otherwise in all other networks harming future generations appears to be the most central node. 
+
+```{r}
+##### Create two new datasets 21 and 22 only with the common variables
+
+common_vars <- intersect(names(df21recoded_subset), names(df22recoded_subset))
+print(common_vars)
+
+```
+
+```{r}
+diff_vars22 <- setdiff(names(df22recoded_subset), names(df21recoded_subset))
+print(diff_vars22)
+
+```
+```{r}
+diff_vars21 <- setdiff(names(df21recoded_subset), names(df22recoded_subset))
+print(diff_vars21)
+
+```
+```{r}
+# common vars without demographics
+common_vars <- c("climate_awareness", "climate_happening", "climate_beliefs", "climate_worry", 
+                 "harm_personally", "harm_future_gen", "climate_importance", "gov_priority",
+                 "economic_impact", "renewable_more_less", "fossil_more_less")
+
+data21_common <- df21recoded_subset[, common_vars]
+data22_common <- df22recoded_subset[, common_vars]
+
+write.csv(data21_common, "data21_common.csv")
+write.csv(data22_common, "data22_common.csv")
+
+```
+
+
+```{r}
+########### Re-estimate networks for common vars 21 and 22 with polychoric and EBIC
+Network22_EBIC_poly_subset <- estimateNetwork(data22_common,default = "EBICglasso", tuning = .5, corMethod = "cor_auto")
+Network21_EBIC_poly_subset<- estimateNetwork(data21_common,default = "EBICglasso", tuning = .5, corMethod = "cor_auto")
+```
+```{r}
+png("Network21_subset.png", width = 2000, height = 1500, res = 300)
+
+plot(Network21_EBIC_poly_subset)
+```
+
+
+```{r}
+## Re-estimate networks for common vars 21 and 22 with npn and pcor
+Network22_EBIC_npn_subset <- estimateNetwork(data22_common,default = "EBICglasso", tuning = 0.5, corMethod = "npn")
+Network22_EBIC_pcor_subset <- estimateNetwork(data22_common, default = "EBICglasso",tuning = 0.5,corMethod = "cor")
+Network21_EBIC_npn_subset <- estimateNetwork(data21_common,default = "EBICglasso", tuning = 0.5, corMethod = "npn")
+Network21_EBIC_pcor_subset <- estimateNetwork(data21_common, default = "EBICglasso",tuning = 0.5,corMethod = "cor")
+```
+
+
+
+```{r}
+pdf("CentralityPlotSubsets.pdf")
+## compare common variables centrality in new estimated networks
+centralityPlot(list(Network22_EBIC_poly_subset=Network22_EBIC_poly_subset,Network21_EBIC_poly_subset=Network21_EBIC_poly_subset,Network22_EBIC_npn_subset=Network22_EBIC_npn_subset,Network22_EBIC_pcor_subset=Network22_EBIC_pcor_subset,Network21_EBIC_npn_subset=Network21_EBIC_npn_subset,Network21_EBIC_pcor_subset=Network21_EBIC_pcor_subset), include = c("Strength", "Betweenness", "Closeness"))
+```
+```{r}
+png("Network22_21_centrality.png", width = 2000, height = 1500, res = 300)
+centralityPlot(list(Network22_EBIC_poly_subset=Network22_EBIC_poly_subset,Network21_EBIC_poly_subset=Network21_EBIC_poly_subset), include = c("Strength", "Betweenness", "Closeness"))
+```
+
+```{r}
+centralityPlot(list(Network22_EBIC_pcor_subset=Network22_EBIC_pcor_subset,Network21_EBIC_pcor_subset=Network21_EBIC_pcor_subset), include = c("Strength", "Betweenness", "Closeness"))
+```
+```{r}
+centralityPlot(list(Network21_EBIC_npn_subset=Network21_EBIC_npn_subset,Network22_EBIC_npn_subset=Network22_EBIC_npn_subset), include = c("Strength", "Betweenness", "Closeness"))
+```
+
+```{r}
+## correlating edge weights for the 2021 subset and 2022 subset
+#obtain weights matrices
+w1<-Network21_EBIC_poly_subset$graph  
+w2<-Network22_EBIC_poly_subset$graph
+
+#obtain edge weights by taking lower(or upper) triangular elements
+e1<-w1[lower.tri(w1)]
+e2<-w2[lower.tri(w2)]
+
+#correlated edges
+cor(e1,e2)
+```
+
+
+```{r}
+#scatter
+plot(e1,e2)
+```
+2021 and 2022 data (common variables) seem to be highly correalted. 
+```{r}
+# Elbow method to determine number of clusters in 2021
+library(dplyr)
+library(ggplot2)
+
+# Drop NAs from the data
+data_clean <- df21recoded_subset %>% drop_na()
+
+# Compute total within-cluster sum of square
+wss <- map_dbl(1:10, function(k) {
+  kmeans(data_clean, centers = k)$tot.withinss
+})
+
+# Plot the elbow
+elbow_df <- data.frame(k = 1:10, wss = wss)
+ggplot(elbow_df, aes(x = k, y = wss)) +
+  geom_line() +
+  scale_x_continuous(breaks = 1:10) +
+  labs(title = "Elbow Method for Optimal k 2021",
+       x = "Number of clusters k",
+       y = "Total Within-Cluster Sum of Square")
+```
+
+RUN tsne for 2021
+```{r}
+library(dplyr)
+library(Rtsne)
+library(ggplot2)
+
+# Start with unique data, drop NAs, and sample
+data21_unique <- df21recoded_subset %>%
+  unique() %>%
+  drop_na() %>%
+  sample_n(10000, replace = FALSE)
+
+# Set seed for reproducibility
+set.seed(123)
+
+# Run k-means clustering
+k <- 3
+kmeans_results <- kmeans(data21_unique, centers = k)
+
+# Add the cluster assignments to the data21_sample data frame
+data21_unique$Cluster <- as.factor(kmeans_results$cluster)
+
+# Perform t-SNE
+tsne_results <- Rtsne(data21_unique, dims = 2, perplexity = 50, 
+                      verbose = TRUE, max_iter = 800, pca = TRUE)
+
+# Convert the t-SNE results to a data frame and add the cluster assignments
+tsne_df <- data.frame(tsne_results$Y, Cluster = data21_unique$Cluster)
+
+# Name the columns
+colnames(tsne_df) <- c("Dimension1", "Dimension2", "Cluster")
+
+# Create scatter plot with ggplot2
+ggplot(tsne_df, aes(x = Dimension1, y = Dimension2, color = Cluster)) +
+  geom_point() +
+  labs(x = "t-SNE dimension 1", y = "t-SNE dimension 2") +
+  scale_color_discrete(name = "Cluster")
+
+```
+```{r}
+# Elbow method to determine number of clusters in 2022
+library(dplyr)
+library(ggplot2)
+
+# Drop NAs from the data
+data_clean2 <- df22recoded_subset %>% drop_na()
+
+# Compute total within-cluster sum of square
+wss <- map_dbl(1:10, function(k) {
+  kmeans(data_clean2, centers = k)$tot.withinss
+})
+
+# Plot the elbow
+elbow_df <- data.frame(k = 1:10, wss = wss)
+ggplot(elbow_df, aes(x = k, y = wss)) +
+  geom_line() +
+  scale_x_continuous(breaks = 1:10) +
+  labs(title = "Elbow Method for Optimal k 2022",
+       x = "Number of clusters k",
+       y = "Total Within-Cluster Sum of Square")
+```
+
+Run tsne for 2022
+```{r}
+# Start with unique data, drop NAs, and sample
+data22_unique <- df22recoded_subset %>%
+  unique() %>%
+  drop_na() %>%
+  sample_n(10000, replace = FALSE)
+
+# Set seed for reproducibility
+set.seed(123)
+
+# Run k-means clustering
+k <- 4
+kmeans_results2 <- kmeans(data22_unique, centers = k)
+
+# Add the cluster assignments to the data21_sample data frame
+data22_unique$Cluster <- as.factor(kmeans_results2$cluster)
+
+# Perform t-SNE
+tsne_results2 <- Rtsne(data22_unique, dims = 2, perplexity = 50, 
+                      verbose = TRUE, max_iter = 800, pca = TRUE)
+
+# Convert the t-SNE results to a data frame and add the cluster assignments
+tsne_df2 <- data.frame(tsne_results2$Y, Cluster = data22_unique$Cluster)
+
+# Name the columns
+colnames(tsne_df2) <- c("Dimension1", "Dimension2", "Cluster")
+
+# Create scatter plot with ggplot2
+ggplot(tsne_df2, aes(x = Dimension1, y = Dimension2, color = Cluster)) +
+  geom_point() +
+  labs(x = "t-SNE dimension 1", y = "t-SNE dimension 2") +
+  scale_color_discrete(name = "Cluster")
+```
+```{r eval=FALSE}
+# try again with spectral clustering
+# Load necessary libraries
+library(kernlab)
+library(cluster)
+
+# Choose an appropriate sigma (width of the Gaussian kernel).
+sigma <- 15
+# 1. Get a small sample from data cause memory exhausted
+
+df21_subset_small <- df21_subset_RC[sample(1:nrow(df21_subset_RC), 1000), ]
+
+
+
+# 1. Compute the Similarity Matrix
+similarity_matrix <- matrix(0, nrow(df21_subset_small), nrow(df21_subset_small))
+for (i in 1:nrow(df21_subset_small)) {
+  for (j in 1:nrow(df21_subset_small)) {
+    similarity_matrix[i,j] <- exp(-sum(abs(df21_subset_small[i,] - df21_subset_small[j,]))^2 / (2 * sigma^2))
+  }
+}
+
+
+# 2. Construct the Graph Laplacian
+degree_matrix <- diag(rowSums(similarity_matrix))
+laplacian <- degree_matrix - similarity_matrix
+
+# 3. Eigen Decomposition
+eigen_decomp <- eigen(laplacian)
+# Sorting eigenvalues and eigenvectors
+sorted_indices <- order(eigen_decomp$values)
+eigenvalues <- eigen_decomp$values[sorted_indices]
+eigenvectors <- eigen_decomp$vectors[,sorted_indices]
+
+# 4. Form Clusters from Eigenvectors
+k <- 3
+clusters <- kmeans(eigenvectors[,1:k], centers=k)$cluster
+
+
+
+```
+
+```{r eval=FALSE}
+# perform the cluster with the finite mixture model Latent class analysis (see paper by Kacha et al (2022) which performed latent class analysis on data to identify groups of respondeds in Europe akin to the yale program on climate change communication studies  )
+library(poLCA)
+```
+
+
+Start Looking at different networks for different demographic groups for year 2021
+```{r}
+# differences between female and male for data 21 (with other demographics included and no recoding for -1)
+
+dat21<-df21recoded2_NA
+
+# Remove 'Refused' (-1) and other and 'Prefer not to answer'
+dat21 <- filter(dat21, gender != -1, gender != 2)  # Removing "Refused" and "Other/Prefer not to answer" from gender column
+
+# Subset Data by Gender
+dat21_female <- filter(dat21, gender == 0)
+dat21_male <- filter(dat21, gender == 1)
+
+#remove one level variables (so gender)
+dat21_female <- select(dat21_female, -gender)
+dat21_male <- select(dat21_male, -gender)
+```
+
+```{r}
+# For females
+net21_female_EBIC <- estimateNetwork(data = dat21_female, default = "EBICglasso", tuning = 0.5,corMethod = "cor_auto")
+# For males
+net21_male_EBIC <- estimateNetwork(data = dat21_male, default = "EBICglasso", tuning = 0.5, corMethod = "cor_auto")
+```
+```{r}
+library(bootnet)
+library(qgraph)
+centralityPlot(net21_female_EBIC, include = c("Strength", "Betweenness", "Closeness"))
+centralityPlot(net21_male_EBIC, include = c("Strength", "Betweenness", "Closeness"))
+```
+
+
+```{r}
+#try again without the subsetted dataset (removing other demographics and replacing -1 with NAs)
+library(dplyr)
+
+dat21_subset <- df21recoded2_NA %>%
+  select(-age, -urbanicity, -country)
+```
+
+```{r}
+# Subset Data by Gender
+dat21_female_subset<- filter(dat21_subset, gender == 0)
+dat21_male_subset <- filter(dat21_subset, gender == 1)
+```
+
+
+```{r}
+# remove one level variable (gender)
+dat21_female_subset <- select(dat21_female_subset, -gender)
+dat21_male_subset <- select(dat21_male_subset, -gender)
+
+```
+
+```{r}
+net21_female_EBIC_subset <- estimateNetwork(data = dat21_female_subset, default = "EBICglasso", tuning = 0.5,corMethod = "cor_auto")
+net21_male_EBIC_subset <- estimateNetwork(data = dat21_male_subset, default = "EBICglasso", tuning = 0.5, corMethod = "cor_auto")
+```
+
+```{r}
+centralityPlot(net21_female_EBIC_subset, include = c("Strength", "Betweenness", "Closeness"))
+centralityPlot(net21_male_EBIC_subset, include = c("Strength", "Betweenness", "Closeness"))
+```
+```{r}
+centralityPlot(list(net21_female_EBIC_subset=net21_female_EBIC_subset,net21_male_EBIC_subset=net21_male_EBIC_subset), include = c("Strength", "Betweenness", "Closeness"))
+```
+```{r}
+plot(net21_female_EBIC_subset)
+plot(net21_male_EBIC_subset)
+```
+Not many differences between female and male particpants in 2021, except for males support for the paris agreement also seems to be quite central. 
+
+Start Network comparison for different countries 2021 here
+
+```{r}
+#select country and other variables without the other demographics
+dat21_country <- subset(df21recoded2_NA, select=-c(urbanicity,age,gender))
+```
+
+```{r}
+# Filtering data for respondents from Italy
+data21_italy <- filter(dat21_country, country == 13)
+```
+
+```{r}
+# remove one level variable, so country
+data21_italy <- select(data21_italy, -country)
+
+```
+
+```{r}
+net21_Italy_EBIC <- estimateNetwork(data = data21_italy, default = "EBICglasso", tuning = 0.5,corMethod = "cor_auto")
+```
+
+
+```{r}
+plot(net21_Italy_EBIC)
+```
+
+
+```{r}
+centralityPlot(net21_Italy_EBIC, include = c("Strength", "Betweenness", "Closeness"))
+```
+```{r}
+# Filtering data for respondents from Russia
+data21_Russia <- filter(dat21_country, country == 21)
+data21_Russia <- select(data21_Russia, -country)
+```
+```{r}
+net21_Russia_EBIC <- estimateNetwork(data = data21_Russia, default = "EBICglasso",tuning = 0.5, corMethod = "cor_auto")
+```
+```{r}
+plot(net21_Russia_EBIC)
+```
+```{r}
+centralityPlot(net21_Russia_EBIC, include = c("Strength", "Betweenness", "Closeness"))
+```
+
+```{r}
+# Filtering data for respondents from Italy
+data21_netherlands<- filter(dat21_country, country == 17)
+```
+
+```{r}
+# remove one level variable, so country
+data21_netherlands <- select(data21_netherlands, -country)
+
+```
+
+```{r}
+net21_netherlands_EBIC <- estimateNetwork(data = data21_netherlands, default = "EBICglasso", tuning = 0.5,corMethod = "cor_auto")
+```
+```{r}
+plot(net21_netherlands_EBIC)
+```
+```{r}
+centralityPlot(net21_netherlands_EBIC, include = c("Strength", "Betweenness", "Closeness"))
+```
+
+
+
+```{r}
+# Filtering data for respondents from UK
+data21_UK <- filter(dat21_country, country == 28)
+data21_UK <- select(data21_UK, -country)
+```
+
+```{r}
+net21_UK_EBIC <- estimateNetwork(data = data21_UK, default = "EBICglasso", tuning = 0.5, corMethod = "cor_auto")
+```
+```{r}
+data21_US <- filter(dat21_country, country == 29)
+data21_US <- select(data21_US, -country)
+```
+
+```{r}
+net21_US_EBIC <- estimateNetwork(data = data21_US, default = "EBICglasso", tuning = 0.5, corMethod = "cor_auto")
+```
+```{r}
+centralityPlot(net21_UK_EBIC, include = c("Strength", "Betweenness", "Closeness"))
+centralityPlot(net21_US_EBIC, include = c("Strength", "Betweenness", "Closeness"))
+```
+
+
+
+```{r}
+centralityPlot(list(net21_US_EBIC=net21_US_EBIC,net21_UK_EBIC=net21_UK_EBIC), include = c("Strength", "Betweenness", "Closeness"))
+```
+```{r}
+# Filter data for US and UK
+subset_data_USUK <- subset(df21recoded2_NA, country %in% c(28, 29))
+
+# Create a table of responses
+response_table <- table(subset_data_USUK$country, subset_data_USUK$gov_priority)
+
+print(response_table)
+
+```
+
+
+
+
+
+```{r}
+png("Network21_US_EBIC.png", width = 2000, height = 1500, res = 300)
+plot(net21_US_EBIC)
+```
+
+```{r}
+png("Network21_UK_EBIC.png", width = 2000, height = 1500, res = 300)
+plot(net21_UK_EBIC)
+```
+
+```{r}
+data21_Fr <- filter(dat21_country, country == 8)
+data21_Fr <- select(data21_Fr, -country)
+```
+
+```{r}
+net21_Fr_EBIC <- estimateNetwork(data = data21_Fr, default = "EBICglasso", tuning = 0.5, corMethod = "cor_auto")
+```
+```{r}
+centralityPlot(net21_Fr_EBIC, include = c("Strength", "Betweenness", "Closeness"))
+centralityPlot(net21_Italy_EBIC, include = c("Strength", "Betweenness", "Closeness"))
+```
+```{r}
+plot(net21_Fr_EBIC)
+```
+For countries such as France and Italy, the climate importance seems to be the most central belief. For the US and UK.
+
+```{r}
+centralityPlot(list(net21_netherlands_EBIC=net21_netherlands_EBIC,net21_US_EBIC=net21_US_EBIC), include = c("Strength", "Betweenness", "Closeness"))
+```
+```{r}
+png("Network21_US_UK_poly.png", width = 2000, height = 1500, res = 300)
+centralityPlot(list(net21_US_EBIC=net21_US_EBIC,net21_UK_EBIC=net21_UK_EBIC), include = c("Strength", "Betweenness", "Closeness"))
+```
+
+
+```{r}
+data21_india <- filter(dat21_country, country == 10)
+data21_india <- select(data21_india, -country)
+net21_india_EBIC <- estimateNetwork(data = data21_india, default = "EBICglasso", tuning = 0.5, corMethod = "cor_auto")
+centralityPlot(list(net21_india_EBIC=net21_india_EBIC), include = c("Strength", "Betweenness", "Closeness"))
+```
+
+
+```{r}
+centralityPlot(list(net21_netherlands_EBIC=net21_netherlands_EBIC,net21_US_EBIC=net21_US_EBIC,net21_UK_EBIC=net21_UK_EBIC,net21_Fr_EBIC=net21_Fr_EBIC,net21_Russia_EBIC=net21_Russia_EBIC, net21_Italy_EBIC=net21_Italy_EBIC,net21_india_EBIC=net21_india_EBIC), include = c("Strength", "Betweenness", "Closeness"))
+```
+2022 Country analysis
+
+```{r}
+#select country and other variables without the other demographics
+dat22_country <- subset(df22recoded2_NA, select=-c(urbanicity,age,gender,education))
+```
+
+```{r}
+# Filtering data for respondents from Norway
+data22_Norway <- filter(dat22_country, country == 110)
+```
+
+```{r}
+# remove one level variable, so country
+data22_Norway <- select(data22_Norway, -country)
+
+```
+
+```{r}
+net22_Norway_EBIC <- estimateNetwork(data = data22_Norway, default = "EBICglasso", tuning = 0.5,corMethod = "cor_auto")
+```
+```{r}
+plot(net22_Norway_EBIC)
+```
+```{r}
+data22_Albania <- filter(dat22_country, country == 102)
+data22_Albania <- select(data22_Albania, -country)
+net22_Albania_EBIC <- estimateNetwork(data = data22_Albania, default = "EBICglasso", tuning = 0.5,corMethod = "cor_auto")
+
+```
+```{r}
+data22_UK<- filter(dat22_country, country == 28)
+data22_UK<- select(data22_UK, -country)
+net22_UK_EBIC <- estimateNetwork(data = data22_UK, default = "EBICglasso", tuning = 0.5,corMethod = "cor_auto")
+
+data22_US<- filter(dat22_country, country == 29)
+data22_US<- select(data22_US, -country)
+net22_US_EBIC <- estimateNetwork(data = data22_US, default = "EBICglasso", tuning = 0.5,corMethod = "cor_auto")
+
+data22_Italy<- filter(dat22_country, country == 13)
+data22_Italy<- select(data22_Italy, -country)
+net22_Italy_EBIC <- estimateNetwork(data = data22_Italy, default = "EBICglasso", tuning = 0.5,corMethod = "cor_auto")
+
+data22_India<- filter(dat22_country, country == 10)
+data22_India<- select(data22_India, -country)
+net22_India_EBIC <- estimateNetwork(data = data22_India, default = "EBICglasso", tuning = 0.5,corMethod = "cor_auto")
+```
+
+```{r}
+
+centralityPlot(list(net22_Norway_EBIC=net22_Norway_EBIC,net22_Italy_EBIC=net22_Italy_EBIC,net22_US_EBIC=net22_US_EBIC,net22_UK_EBIC=net22_UK_EBIC,net22_India_EBIC=net22_India_EBIC), include = c("Strength", "Betweenness", "Closeness"))
+```
+```{r}
+png("Network22_US_UK_poly.png", width = 2000, height = 1500, res = 300)
+centralityPlot(list(net22_US_EBIC=net22_US_EBIC,net22_UK_EBIC=net22_UK_EBIC), include = c("Strength", "Betweenness", "Closeness"))
+```
+```{r}
+png("Network22_UK_poly.png", width = 2000, height = 1500, res = 300)
+plot(net22_UK_EBIC)
+```
+```{r}
+png("Network22_US_poly.png", width = 2000, height = 1500, res = 300)
+plot(net22_US_EBIC)
+```
+
+
+```{r}
+# subsetting by age
+
+# 1 Gen z
+#without the other demographics and NAs
+dat21_age <- subset(df21recoded2_NA, select=-c(urbanicity,country,gender))
+
+```
+```{r}
+data21_age1 <- filter(dat21_age, age == 0)
+data21_age1 <- select(data21_age1, -age)
+```
+
+```{r}
+net21_age1 <- estimateNetwork(data = data21_age1, default = "EBICglasso", tuning = 0.5, corMethod = "cor_auto")
+```
+```{r}
+centralityPlot(net21_age1, include = c("Strength", "Betweenness", "Closeness"))
+```
+For Gen z, Climate action is more central
+```{r}
+# 2 millenials
+data21_age2 <- filter(dat21_age, age == 1)
+data21_age2 <- select(data21_age2, -age)
+```
+
+```{r}
+net21_age2 <- estimateNetwork(data = data21_age2, default = "EBICglasso",tuning = 0.5, corMethod = "cor_auto")
+```
+```{r}
+centralityPlot(net21_age2, include = c("Strength", "Betweenness", "Closeness"))
+```
+Same of millenials.
+```{r}
+# Gen x
+data21_age3 <- filter(dat21_age, age == 2)
+data21_age3 <- select(data21_age3, -age)
+```
+
+```{r}
+net21_age3 <- estimateNetwork(data = data21_age3, default = "EBICglasso", tuning = 0.5, corMethod = "cor_auto")
+```
+```{r}
+centralityPlot(net21_age3, include = c("Strength", "Betweenness", "Closeness"))
+```
+Climate importance is more central for Gen X.
+```{r}
+plot(net21_age3)
+```
+
+```{r}
+# 4. baby boomers
+data21_age4 <- filter(dat21_age, age == 3)
+data21_age4 <- select(data21_age4, -age)
+
+```
+
+```{r}
+net21_age4 <- estimateNetwork(data = data21_age4, default = "EBICglasso", tuning = 0.5, corMethod = "cor_auto")
+```
+```{r}
+centralityPlot(net21_age4, include = c("Strength", "Betweenness", "Closeness"))
+```
+Paris support or oppose is more cental for baby boomers. 
+```{r}
+plot(net21_age4)
+```
+```{r}
+# all together 21
+centralityPlot(net21_age1, include = c("Strength", "Betweenness", "Closeness"))
+centralityPlot(net21_age2, include = c("Strength", "Betweenness", "Closeness"))
+centralityPlot(net21_age3, include = c("Strength", "Betweenness", "Closeness"))
+centralityPlot(net21_age4, include = c("Strength", "Betweenness", "Closeness"))
+```
+Clearly climate action is more central for gen Z, climate importance for millenials and Gen X, and support for Paris agreement for Baby boomers. 
+
+```{r}
+centralityPlot(list(net21_age1=net21_age1,net21_age2=net21_age2,net21_age2=net21_age2,net21_age3=net21_age3,net21_age4=net21_age4), include = c("Strength", "Betweenness", "Closeness"))
+```
+
+Age analysis for 2022 starts here
+```{r}
+
+df22_age <- subset(df22recoded2_NA, select=-c(country,urbanicity,gender))
+```
+
+```{r}
+data22_age1 <- filter(df22_age, age == 0)
+data22_age1 <- select(data22_age1, -age)
+data22_age2 <- filter(df22_age, age == 1)
+data22_age2 <- select(data22_age2, -age)
+data22_age3 <- filter(df22_age, age == 2)
+data22_age3 <- select(data22_age3, -age)
+data22_age4 <- filter(df22_age, age == 3)
+data22_age4 <- select(data22_age4, -age)
+```
+```{r}
+net22_age1 <- estimateNetwork(data = data22_age1, default = "EBICglasso", tuning = 0.5,corMethod = "cor_auto")
+net22_age2 <- estimateNetwork(data = data22_age2, default = "EBICglasso", tuning = 0.5,corMethod = "cor_auto")
+net22_age3 <- estimateNetwork(data = data22_age3, default = "EBICglasso", tuning = 0.5,corMethod = "cor_auto")
+net22_age4 <- estimateNetwork(data = data22_age4, default = "EBICglasso", tuning = 0.5,corMethod = "cor_auto")
+```
+```{r}
+# all together 22
+centralityPlot(net22_age1, include = c("Strength", "Betweenness", "Closeness"))
+centralityPlot(net22_age2, include = c("Strength", "Betweenness", "Closeness"))
+centralityPlot(net22_age3, include = c("Strength", "Betweenness", "Closeness"))
+centralityPlot(net22_age4, include = c("Strength", "Betweenness", "Closeness"))
+```
+
+```{r}
+centralityPlot(list(net22_age1=net22_age1,net22_age2=net22_age2,net22_age3=net22_age3,net22_age4=net22_age4), include = c("Strength", "Betweenness", "Closeness"))
+```
+not so many age differences in 22.
+
+Are the networks different for those who act environmentally vs those who do not? check the network differences between climate action.
+
+
+
+```{r}
+# remove demographics first
+dat21_action<- subset(df21recoded2_NA, select=-c(country,urbanicity,age,gender))
+# Create a table of counts for the values 0 and 4
+counts <- table(dat21_action$climate_action[dat21_action$climate_action %in% c(0, 4)])
+# Plot the counts
+barplot(counts, main="Responses for climate_action", xlab="Response Value", ylab="Number of Respondents", col=c("red", "blue"), border="white", las=1)
+legend("topright", legend=names(counts), fill=c("red", "blue"))
+
+
+```
+```{r}
+library(dplyr)
+# For those who responded with a 4 -> I am participating in an effort like this now
+df21_high_action <- dat21_action %>% filter(`climate_action` == 4)
+
+# For those who responded 0 -> I definitely would not do it
+df21_low_action <- dat21_action %>% filter(`climate_action` == 0)
+```
+
+```{r}
+# now remove the action variable
+df21_high_action <- df21_high_action[, !(names(df21_high_action) == "climate_action")]
+df21_low_action <- df21_low_action[, !(names(df21_low_action) == "climate_action")]
+```
+
+```{r}
+library(bootnet)
+# construct networks for high and low action
+net21_high_action <- estimateNetwork(data = df21_high_action, default = "EBICglasso", tuning = 0.5, corMethod = "cor_auto")
+net21_low_action <- estimateNetwork(data = df21_low_action, default = "EBICglasso", tuning = 0.5, corMethod = "cor_auto")
+```
+```{r}
+centralityPlot(net21_high_action, include = c("Strength", "Betweenness", "Closeness"))
+centralityPlot(net21_low_action, include = c("Strength", "Betweenness", "Closeness"))
+```
+```{r}
+plot(net21_high_action)
+```
+```{r}
+# Network comparison tests
+library(NetworkComparisonTest)
+
+NCT_UK_US<- NCT(net21_UK_EBIC,net21_US_EBIC, it=10, test.edges=TRUE)
+```
+```{r}
+NCT_UK_US_c<- NCT(net21_UK_EBIC,net21_US_EBIC, test.edges=TRUE, test.centrality = TRUE, centrality = c("strength"), nodes = "all")
+```
+```{r}
+NCT_commonvars_c<-NCT(Network21_EBIC_poly_subset,Network22_EBIC_poly_subset, it=10, test.edges=TRUE, test.centrality = TRUE, centrality = c("strength"), nodes = "all")
+```
+```{r}
+summary(NCT_commonvars_c)
+```
+```{r}
+# difference in global strength p.values
+NCT_commonvars_c$glstrinv.real
+NCT_commonvars_c$glstrinv.pval
+```
+```{r}
+#maximum difference in edge weights
+NCT_commonvars_c$nwinv.real
+NCT_commonvars_c$nwinv.pval
+```
+
+
+```{r}
+# which edges differ significantly
+NCT_commonvars_c$einv.pvals[which(NCT_commonvars_c$einv.pvals[,3] < 0.05), ]
+```
+```{r}
+NCT_commonvars_c$einv.pval
+```
+
+
+```{r}
+layout<-averageLayout(NCT_commonvars_c$nw1,NCT_commonvars_c$nw2)
+qgraph(NCT_commonvars_c$nw2, theme='colorblind', layout=layout, maximum=1.7)
+qgraph(NCT_commonvars_c$nw1, theme='colorblind', layout=layout, maximum=1.7)
+```
+
+
+```{r}
+summary(NCT_UK_US_c)
+```
+
+```{r}
+# p value of global strength
+NCT_UK_US$glstrinv.pval
+```
+The global strength of a network is the sum of the absolute edge weights in the network. The overall connectivity or co-activation in the two networks is significantly different, with a p-value <0.001
+
+```{r}
+# p value of omnibus test (check this again)
+NCT_UK_US$nwinv.pval
+```
+The omnibus test indicates that the two networks have at least one connection that is significantly different, with a very low p-value of  p<0.001.
+
+```{r}
+# p value of edge tests
+NCT_UK_US$einv.pval
+```
+
+```{r}
+plot(NCT_UK_US_c, what = c("strength", "network", "edge", "centrality"))
+```
+
+```{r}
+# Network comparison tests
+library(NetworkComparisonTest)
+
+NCT_action<- NCT(net21_high_action,net21_low_action, it=10, test.edges=TRUE)
+NCT_action_c<- NCT(net21_high_action,net21_low_action, it=10, test.edges=TRUE,test.centrality = TRUE, centrality = c("strength"), nodes = "all")
+```
+```{r}
+summary(NCT_action_c)
+```
+```{r}
+NCT_action_c$glstrinv.real
+NCT_action_c$glstrinv.pval
+```
+
+
+
+```{r}
+plot(NCT_action_c, what = c("strength", "network", "edge", "centrality"))
+```
+
+```{r}
+# p value of global strength
+NCT_action_c$glstrinv.pval
+```
+The global strength of a network is the sum of the absolute edge weights in the network. The overall connectivity or co-activation in the two networks is significantly different, with a p-value <0.001
+
+```{r}
+# p value of omnibus test (check this again)
+NCT_action_c$nwinv.pval
+```
+The omnibus test indicates that the two networks have at least one connection that is significantly different, with a very low p-value of  p<0.001.
+
+```{r}
+# p value of edge tests
+NCT_action_c$einv.pval
+```
+
+```{r}
+# Community detections
+library(EGAnet)
+ega1<-EGA(df21recoded_subset, plot.EGA = TRUE)
+```
+
+
+
+Simulation tests begin here. we want to see in 2021 the effect of intervening on harm_future_gen on climate_action
+```{r}
+# create a copy of the dataset 
+df21recoded_subset_copy <- df21recoded_subset
+
+# Number of simulations
+num_sims <- 1000
+
+# Extract the adjacency matrix from the network
+adj_matrix <- Network21_EBIC_poly$graph
+
+# Initialize a matrix to store results (e.g., effects on climate_action)
+results <- matrix(NA, nrow=num_sims, ncol=4, dimnames=list(NULL, c("harm_0", "harm_1", "harm_2", "harm_3")))
+
+# Index for harm_future_gen and climate_action
+index_harm <- which(colnames(df21recoded_subset_copy) == "harm_future_gen")
+index_climate <- which(colnames(df21recoded_subset_copy) == "climate_action")
+
+for (i in 1:num_sims) {
+  for (harm_value in 0:3) {
+    # Set harm_future_gen to the intervention value
+    intervention_vector <- rep(0, ncol(df21recoded_subset_copy))
+    intervention_vector[index_harm] <- harm_value
+    
+    # Calculate the effect on climate_action (and potentially other nodes)
+    effect <- sum(intervention_vector * adj_matrix[, index_climate])
+    
+    # Store the result
+    results[i, paste("harm", harm_value, sep="_")] <- effect
+  }
+}
+```
+
+
+```{r}
+# Analyze the 'results' matrix to see the distribution of effects on climate_action for each intervention value.
+summary_results <- apply(results, 2, summary)
+
+par(mfrow=c(2,2))  # Set up a 2x2 plotting grid
+for (col in colnames(results)) {
+  hist(results[,col], main=col, xlab="Effect on climate_action", breaks=30)
+}
+
+```
+```{r}
+boxplot(results, main="Effects on climate_action by harm_future_gen value", ylab="Effect on climate_action")
+
+```
+
+```{r}
+##### Ising simulations for binarized datasets
+library(IsingSampler)
+library(IsingFit)
+```
+
+
+
+
+
